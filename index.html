@@ -3,76 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>T&T | RADAR</title>
+    <title>T&T | EVENT</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap" rel="stylesheet">
     <style>
         :root { --accent: #ff5e00; }
-        body { margin: 0; background: #000; color: white; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; transition: background 0.4s; }
+        body { margin: 0; background: #000; color: white; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
         .screen { display: none; height: 100%; width: 100%; flex-direction: column; align-items: center; justify-content: center; position: absolute; text-align: center; padding: 20px; box-sizing: border-box; }
         .active { display: flex; z-index: 10; }
-        .input-field { width: 85%; max-width: 300px; padding: 18px; margin: 10px 0; border-radius: 12px; border: none; background: #1a1a1a; color: white; font-size: 1.1rem; text-align: center; }
         .btn-main { width: 100%; max-width: 280px; padding: 20px; border-radius: 15px; border: none; background: var(--accent); color: white; font-weight: 900; font-size: 1.2rem; }
-        .radar-btn { width: 220px; height: 220px; border-radius: 50%; border: 10px solid white; background: none; color: white; font-size: 1.8rem; font-weight: 900; }
-        #flash-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:none; }
+        .radar-btn { width: 220px; height: 220px; border-radius: 50%; border: 10px solid white; background: none; color: white; font-size: 1.8rem; font-weight: 900; transition: all 0.2s; }
+        .radar-btn:active { transform: scale(0.9); }
+        #flash-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:none; pointer-events: none; }
+        .input-field { width: 85%; max-width: 300px; padding: 18px; margin: 10px 0; border-radius: 12px; border: none; background: #1a1a1a; color: white; text-align: center; font-size: 1rem; }
     </style>
 </head>
 <body>
+    <div id="flash-overlay"></div>
+
     <div id="sc-login" class="screen active">
         <h1 style="color:var(--accent)">HOLA!</h1>
-        <input type="text" id="n" class="input-field" placeholder="Tu Nombre">
+        <input type="text" id="n" class="input-field" placeholder="Nombre">
         <input type="text" id="m" class="input-field" placeholder="Mesa">
-        <button class="btn-main" onclick="entrar()">CONECTAR</button>
+        <button class="btn-main" onclick="init()">ENTRAR</button>
     </div>
 
     <div id="sc-wait" class="screen">
-        <h1 style="color:var(--accent)">CONECTADO</h1>
-        <p>No bloquees tu pantalla, el DJ tomará el control...</p>
+        <h1 id="wait-msg">CONECTADO</h1>
+        <p>Mantén esta pestaña abierta...</p>
     </div>
 
     <div id="sc-radar" class="screen">
-        <h2 id="status">¡LISTOS!</h2>
-        <button id="btn-p" class="radar-btn" onclick="pulsar()" disabled>ESPERA</button>
+        <button id="btn-p" class="radar-btn" onclick="pulsar()">ESPERA</button>
     </div>
 
-    <div id="flash-overlay"></div>
-
     <script>
-        let myId = "", socket = new WebSocket('wss://tapapp.onrender.com/ws'), wakeLock = null;
+        let myId = "", socket = new WebSocket('wss://tapapp.onrender.com/ws');
+        let videoTrack = null, flashInt = null, wakeLock = null;
 
-        async function entrar() {
+        async function init() {
             const name = document.getElementById('n').value, mesa = document.getElementById('m').value;
             if(!name || !mesa) return;
-            myId = name + " (Mesa " + mesa + ")";
-            localStorage.setItem('tt_user', myId);
-            iniciarSesion();
-        }
+            myId = `${name} (Mesa ${mesa})`;
+            
+            // 1. Bloqueo de sueño
+            if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
+            
+            // 2. Permiso de cámara para linterna
+            try {
+                const s = await navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}});
+                videoTrack = s.getVideoTracks()[0];
+            } catch(e) { console.log("Sin linterna física"); }
 
-        async function iniciarSesion() {
-            if(socket.readyState === 1) socket.send(JSON.stringify({type:"presence", user_id: myId}));
-            if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} }
+            socket.send(JSON.stringify({type:"presence", user_id: myId}));
             showScreen('sc-wait');
         }
 
         function pulsar() { socket.send(JSON.stringify({type:"player_click", user_id: myId})); }
 
-        socket.onmessage = (e) => {
-            const d = JSON.parse(e.data);
-            if(d.action === "prepare_contest") {
+        socket.onmessage = async (e) => {
+            const data = JSON.parse(e.data);
+            const overlay = document.getElementById('flash-overlay');
+
+            if(data.action === "prepare_contest") {
                 showScreen('sc-radar');
-                document.getElementById('btn-p').disabled = true;
-                document.getElementById('btn-p').innerText = "ESPERA";
+                const btn = document.getElementById('btn-p');
+                btn.disabled = true; btn.innerText = "ESPERA";
                 document.body.style.backgroundColor = "#000";
             }
-            if(d.action === "go_pulsar") {
-                document.getElementById('btn-p').disabled = false;
-                document.getElementById('btn-p').innerText = "¡DALE!";
+            
+            if(data.action === "go_pulsar") {
+                const btn = document.getElementById('btn-p');
+                btn.disabled = false; btn.innerText = "¡DALE!";
             }
-            if(d.action === "winner_found") {
-                const win = d.winner_id === myId;
+
+            if(data.action === "winner_found") {
+                const win = data.winner_id === myId;
                 document.getElementById('btn-p').innerText = win ? "¡GANASTE!" : "CASI...";
                 document.body.style.backgroundColor = win ? "#2ecc71" : "#8b0000";
             }
-            if(d.action === "reset") {
+
+            if(data.action === "start_flashing") {
+                overlay.style.display = "block";
+                clearInterval(flashInt);
+                flashInt = setInterval(async () => {
+                    const isBlack = overlay.style.backgroundColor === 'black' || overlay.style.backgroundColor === '';
+                    overlay.style.backgroundColor = isBlack ? (data.color || "#ffffff") : 'black';
+                    if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isBlack}]}).catch(()=>{});
+                }, 130);
+            }
+
+            if(data.action === "stop_flashing") {
+                clearInterval(flashInt);
+                const isWinner = data.force_winner === myId;
+                overlay.style.backgroundColor = isWinner ? (data.color || "#ffffff") : "black";
+                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isWinner}]}).catch(()=>{});
+                setTimeout(() => {
+                    overlay.style.display = "none";
+                    if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
+                    showScreen('sc-wait');
+                }, 5000);
+            }
+
+            if(data.action === "reset") {
+                clearInterval(flashInt);
+                overlay.style.display = "none";
                 document.body.style.backgroundColor = "#000";
                 showScreen('sc-wait');
             }

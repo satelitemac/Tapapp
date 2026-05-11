@@ -18,26 +18,28 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_text()
-            msg = json.loads(data)
+            message = json.loads(data)
             
-            u_id = msg.get("user_id")
+            u_id = message.get("user_id")
             if u_id and u_id != "ADMIN_PANEL":
                 current_id = u_id
                 active_users[u_id] = websocket
 
-            if msg.get("type") == "ping": continue
+            if message.get("type") == "ping": continue
 
-            if msg.get("type") == "player_click":
+            # Lógica de Radar
+            if message.get("type") == "player_click":
                 if winner_id is None:
                     winner_id = u_id
                     await broadcast({"action": "winner_found", "winner_id": winner_id})
             
-            elif "action" in msg:
-                if msg["action"] == "reset":
+            # Lógica de Admin (Reset, Linternas, Colores)
+            elif "action" in message:
+                if message["action"] == "reset":
                     winner_id = None
-                await broadcast(msg)
+                await broadcast(message)
             else:
-                await broadcast(msg)
+                await broadcast(message)
 
     except WebSocketDisconnect:
         if current_id in active_users:
