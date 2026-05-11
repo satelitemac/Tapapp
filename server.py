@@ -9,7 +9,6 @@ winner_id = None
 
 @app.get("/")
 async def root():
-    # Si entras aquí con el navegador, verás quién está conectado de verdad
     return {
         "status": "Servidor T&T Activo",
         "conectados": list(active_users.keys()),
@@ -28,36 +27,42 @@ async def websocket_endpoint(websocket: WebSocket):
             message = json.loads(data)
             
             # --- AUTO-REGISTRO ---
-            # Si el mensaje trae un user_id, lo registramos inmediatamente si no estaba
             u_id = message.get("user_id")
             if u_id:
                 current_id = u_id
-                if u_id not in active_users:
-                    print(f"✨ Registrando nuevo usuario: {u_id}")
                 active_users[u_id] = websocket
 
-            # LÓGICA DE RADAR
+            # 1. LÓGICA DE RADAR (EL DE PULSAR)
             if message.get("type") == "player_click":
                 if winner_id is None:
                     winner_id = u_id
                     await broadcast({"action": "winner_found", "winner_id": winner_id})
             
-            # LÓGICA DE ADMIN
+            # 2. LÓGICA DE ADMIN
             elif "action" in message:
-                if message["action"] == "reset": winner_id = None
-                if message["action"] == "stop_flashing" and "force_winner" in message:
+                if message["action"] == "reset":
+                    winner_id = None
+                    # Enviamos el reset para que todos recarguen
+                    await broadcast({"action": "reset"})
+                
+                elif message["action"] == "stop_flashing" and "force_winner" in message:
                     winner_id = message["force_winner"]
-                    await broadcast({"action": "winner_found", "winner_id": winner_id})
-                await broadcast(message)
+                    # Enviamos señal específica de luces para no romper el radar
+                    await broadcast({
+                        "action": "light_winner_found", 
+                        "winner_id": winner_id,
+                        "color": message.get("color", "#ffffff")
+                    })
+                else:
+                    await broadcast(message)
             
-            # PETICIONES Y OTROS
+            # 3. OTROS (DJ NOTES, ETC)
             else:
                 await broadcast(message)
 
     except WebSocketDisconnect:
         if current_id in active_users:
             del active_users[current_id]
-        print(f"❌ Desconectado: {current_id}")
 
 async def broadcast(message: dict):
     msg_str = json.dumps(message)
