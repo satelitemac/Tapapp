@@ -4,144 +4,74 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>T&T | RADAR</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap" rel="stylesheet">
     <style>
         :root { --accent: #ff5e00; --dj: #00d4ff; }
         body { margin: 0; background: #000; color: white; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
-        
         .screen { display: none; height: 100%; width: 100%; flex-direction: column; align-items: center; justify-content: center; position: absolute; text-align: center; padding: 20px; box-sizing: border-box; }
         .active { display: flex; z-index: 10; }
-
-        /* Portada Neo4j */
-        .track-container { width: 100%; max-width: 300px; margin-bottom: 20px; transition: transform 0.3s ease; }
-        .album-art { width: 100%; aspect-ratio: 1/1; border-radius: 15px; object-fit: cover; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 1px solid #333; }
-        .track-info { margin-top: 15px; }
-        .track-title { font-weight: 900; font-size: 1.4rem; margin: 0; text-transform: uppercase; line-height: 1.1; }
-        .track-artist { color: var(--accent); font-weight: 400; font-size: 0.9rem; margin: 5px 0 0 0; letter-spacing: 1px; }
-
-        .input-field { width: 85%; max-width: 300px; padding: 18px; margin: 10px 0; border-radius: 12px; border: none; background: #1a1a1a; color: white; font-size: 1rem; text-align: center; }
-        .menu-btn { width: 100%; max-width: 280px; padding: 18px; margin: 8px; border-radius: 12px; border: 2px solid var(--accent); background: transparent; color: white; font-weight: 900; font-size: 1rem; cursor: pointer; }
-        
-        .radar-button { width: 200px; height: 200px; border-radius: 50%; border: 8px solid white; background: transparent; color: white; font-size: 1.5rem; font-weight: 900; }
-        
-        #flash-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:none; background: black; }
+        .input-field { width: 85%; max-width: 300px; padding: 18px; margin: 10px 0; border-radius: 12px; border: none; background: #1a1a1a; color: white; font-size: 1.1rem; text-align: center; }
+        .menu-btn { width: 100%; max-width: 280px; padding: 20px; margin: 10px; border-radius: 15px; border: 2px solid var(--accent); background: transparent; color: white; font-weight: 900; font-size: 1.2rem; }
+        .radar-btn { width: 220px; height: 220px; border-radius: 50%; border: 10px solid white; background: none; color: white; font-size: 1.8rem; font-weight: 900; }
     </style>
 </head>
 <body>
-
-    <div id="screen-login" class="screen active">
-        <h1 style="color:var(--accent); font-size: 3rem; margin: 0;">HOLA!</h1>
-        <p style="color: #666; margin-bottom: 30px;">Introduce tus datos para conectar</p>
-        <input type="text" id="reg-nombre" class="input-field" placeholder="Tu Nombre">
-        <input type="text" id="reg-mesa" class="input-field" placeholder="Tu Mesa">
-        <button class="menu-btn" onclick="initApp()" style="background: var(--accent); border: none;">CONECTAR</button>
+    <div id="sc-login" class="screen active">
+        <h1 style="color:var(--accent); font-size: 3rem;">HOLA!</h1>
+        <input type="text" id="n" class="input-field" placeholder="Nombre">
+        <input type="text" id="m" class="input-field" placeholder="Mesa">
+        <button class="menu-btn" onclick="entrar()" style="background:var(--accent); border:none;">ENTRAR</button>
     </div>
 
-    <div id="screen-welcome" class="screen">
-        <div class="track-container" id="neo-display">
-            <img id="track-img" class="album-art" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=500">
-            <div class="track-info">
-                <h2 id="track-title" class="track-title">SINTONIZANDO...</h2>
-                <p id="track-artist" class="track-artist">T&T RADIO</p>
-            </div>
-        </div>
-        <button class="menu-btn" onclick="showScreen('screen-radar-waiting')">🕹️ MODO CONCURSO</button>
-        <button class="menu-btn" style="border-color:var(--dj); color:var(--dj)" onclick="showScreen('screen-dj')">💬 MENSAJE AL DJ</button>
+    <div id="sc-wait" class="screen">
+        <h1 style="color:var(--accent)">CONECTADO</h1>
+        <p>Espera a que el DJ active el Radar...</p>
+        <button class="menu-btn" style="border-color:var(--dj); color:var(--dj)" onclick="showMsg()">💬 MANDAR NOTA AL DJ</button>
     </div>
 
-    <div id="screen-radar-waiting" class="screen">
-        <h2 style="color:#444">CONECTADO AL RADAR</h2>
-        <p>El DJ activará el botón en cualquier momento...</p>
-        <button onclick="showScreen('screen-welcome')" style="background:none; border:none; color:#666; margin-top:20px;">← CANCELAR</button>
+    <div id="sc-radar" class="screen">
+        <h2 id="status">¡LISTOS!</h2>
+        <button id="btn-p" class="radar-btn" onclick="pulsar()" disabled>ESPERA</button>
     </div>
-
-    <div id="screen-radar" class="screen">
-        <h2 id="status-text">¡ATENTOS!</h2>
-        <button id="radar-btn" class="radar-button" disabled>ESPERA</button>
-    </div>
-
-    <div id="screen-dj" class="screen">
-        <h2 style="color:var(--dj)">MENSAJE AL DJ</h2>
-        <input type="text" id="dj-input" class="input-field" placeholder="¿Qué canción quieres?">
-        <button id="send-dj-btn" class="menu-btn" style="background:var(--dj); border:none; color:black">ENVIAR PETICIÓN</button>
-        <button onclick="showScreen('screen-welcome')" style="background:none; border:none; color:#666; margin-top:20px;">← VOLVER</button>
-    </div>
-
-    <div id="flash-overlay"></div>
 
     <script>
-        let myId = "";
-        let videoTrack = null;
-        const socket = new WebSocket('wss://tapapp.onrender.com/ws');
+        let myId = "", socket = new WebSocket('wss://tapapp.onrender.com/ws');
 
-        // Inicialización
-        function initApp() {
-            const n = document.getElementById('reg-nombre').value;
-            const m = document.getElementById('reg-mesa').value;
-            if(!n || !m) return alert("Pon nombre y mesa");
-            
-            myId = `${n} (Mesa ${m})`;
-            localStorage.setItem('tt_user', myId);
-            
-            if(socket.readyState === 1) socket.send(JSON.stringify({"type":"presence", "user_id": myId}));
-            
-            // Intentar cámara sin bloquear
-            navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}})
-                .then(s => videoTrack = s.getVideoTracks()[0]).catch(() => {});
-            
-            showScreen('screen-welcome');
+        function entrar() {
+            const name = document.getElementById('n').value, mesa = document.getElementById('m').value;
+            if(!name || !mesa) return;
+            myId = name + " (Mesa " + mesa + ")";
+            if(socket.readyState === 1) socket.send(JSON.stringify({type:"presence", user_id: myId}));
+            showScreen('sc-wait');
         }
+
+        function pulsar() { socket.send(JSON.stringify({type:"player_click", user_id: myId})); }
 
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
         }
 
-        // Lógica del Socket
-        socket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-
-            // ACTUALIZAR PORTADA (Desde Neo4j)
-            if (data.action === "update_track") {
-                document.getElementById('track-img').src = data.track.image;
-                document.getElementById('track-title').innerText = data.track.title;
-                document.getElementById('track-artist').innerText = data.track.artist;
+        socket.onmessage = (e) => {
+            const d = JSON.parse(e.data);
+            if(d.action === "prepare_contest") {
+                showScreen('sc-radar');
+                document.getElementById('btn-p').disabled = true;
+                document.getElementById('btn-p').innerText = "ESPERA";
             }
-
-            // CONCURSO
-            if (data.action === "prepare_contest") {
-                showScreen('screen-radar');
-                document.getElementById('radar-btn').disabled = true;
-                document.getElementById('radar-btn').innerText = "ESPERA";
+            if(d.action === "go_pulsar") {
+                document.getElementById('btn-p').disabled = false;
+                document.getElementById('btn-p').innerText = "¡DALE YA!";
             }
-            if (data.action === "go_pulsar") {
-                document.getElementById('radar-btn').disabled = false;
-                document.getElementById('radar-btn').innerText = "¡DALE!";
+            if(d.action === "winner_found") {
+                document.getElementById('btn-p').innerText = (d.winner_id === myId) ? "¡GANASTE!" : "CASI...";
+                document.getElementById('btn-p').disabled = true;
+                setTimeout(() => showScreen('sc-wait'), 4000);
             }
-            if (data.action === "winner_found") {
-                document.getElementById('radar-btn').innerText = (data.winner_id === myId) ? "¡GANASTE!" : "CASI...";
-                document.getElementById('radar-btn').disabled = true;
-                setTimeout(() => showScreen('screen-welcome'), 4000);
-            }
-            if (data.action === "reset") location.reload();
+            if(d.action === "reset") location.reload();
         };
 
-        // Enviar al DJ
-        document.getElementById('send-dj-btn').onclick = () => {
-            const msg = document.getElementById('dj-input').value;
-            if(msg) {
-                socket.send(JSON.stringify({"type":"dj_note", "text": msg, "user_id": myId}));
-                alert("Petición enviada!");
-                showScreen('screen-welcome');
-            }
-        };
-
-        // Mantener conexión viva
-        setInterval(() => { if(socket.readyState === 1) socket.send(JSON.stringify({type:'ping'})); }, 20000);
-
-        document.getElementById('radar-btn').onclick = () => {
-            socket.send(JSON.stringify({"type":"player_click", "user_id": myId}));
-        };
+        setInterval(() => { if(socket.readyState === 1) socket.send(JSON.stringify({type:"ping"})); }, 20000);
     </script>
 </body>
 </html>
