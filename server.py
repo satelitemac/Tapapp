@@ -3,62 +3,72 @@ import json
 
 app = FastAPI()
 
-# Lista para guardar todos los teléfonos y ordenadores conectados
-active_connections = []
+# Diccionario para mapear user_id -> WebSocket
+# Esto nos permite saber exactamente quién está conectado
+active_users = {} 
 winner_id = None
 
 @app.get("/")
 async def root():
-    # Esto es lo que ves al entrar en tapapp.onrender.com
-    return {"status": "T&T Super-Server Online", "msg": "Servidor de Concurso y VJ Activo"}
+    return {"status": "T&T Super-Server Online", "msg": "Servidor con Gestión de Identidad Activo"}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     global winner_id
     await websocket.accept()
-    active_connections.append(websocket)
-    print(f"Nueva conexión. Total: {len(active_connections)}")
+    
+    current_user_id = None
     
     try:
         while True:
-            # Recibimos mensajes de cualquier cliente (Admin o Móvil)
             data = await websocket.receive_text()
             message = json.loads(data)
-            print(f"Recibido: {message}") 
+            
+            # REGISTRO: Lo primero que hace cualquier cliente al conectar
+            if message.get("type") == "presence" or "user_id" in message:
+                user_id = message.get("user_id")
+                if user_id:
+                    current_user_id = user_id
+                    active_users[user_id] = websocket
+                    # Notificamos al Admin que hay alguien nuevo
+                    await broadcast({"type": "presence", "user_id": user_id, "count": len(active_users)})
 
-            # 1. LÓGICA DEL RADAR: El primero que pulsa gana si no hay ganador
+            # 1. LÓGICA DEL RADAR
             if message.get("type") == "player_click":
                 if winner_id is None:
                     winner_id = message.get("user_id")
                     await broadcast({"action": "winner_found", "winner_id": winner_id})
             
-            # 2. LÓGICA DE ADMIN: Órdenes de control
+            # 2. LÓGICA DE ADMIN
             elif "action" in message:
                 if message["action"] == "reset":
                     winner_id = None
                 
-                # SORTEO DE LUCES: Si el admin detiene el parpadeo y envía un ganador forzado
                 if message["action"] == "stop_flashing" and "force_winner" in message:
                     winner_id = message["force_winner"]
-                    # Avisamos oficialmente a todos quién es el ganador
                     await broadcast({"action": "winner_found", "winner_id": winner_id})
                 
-                # Reenviamos la orden original (prepare, stop_flashing, etc.) a todos
                 await broadcast(message)
             
-            # 3. LÓGICA VJ/DJ Y OTROS: Peticiones musicales, etc.
+            # 3. MENSAJES/NOTAS (VJ/DJ)
             else:
+                # Reenviamos el mensaje a todos para que el Admin y DJ lo vean
                 await broadcast(message)
 
     except WebSocketDisconnect:
-        if websocket in active_connections:
-            active_connections.remove(websocket)
-        print("Conexión cerrada")
+        if current_user_id in active_users:
+            del active_users[current_user_id]
+        print(f"Usuario {current_user_id} desconectado")
 
 async def broadcast(message: dict):
-    # Esta función envía el mensaje a ABSOLUTAMENTE TODOS los conectados
-    for connection in active_connections:
+    # Enviamos a todos los que están en nuestro diccionario de activos
+    message_str = json.dumps(message)
+    # Hacemos una copia de las llaves para evitar errores si alguien se desconecta durante el loop
+    for user_id in list(active_users.keys()):
         try:
-            await connection.send_text(json.dumps(message))
+            ws = active_users[user_id]
+            await ws.send_text(message_str)
         except:
-            pass # Si alguna conexión falló, la ignoramos
+            # Si falla, limpiamos ese usuario
+            if user_id in active_users:
+                del active_users[user_id]
