@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>T&T | RADAR APP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap" rel="stylesheet">
+    <style>
+        :root { --accent: #ff5e00; --accent-pale: #ff8c42; --dj: #00d4ff; }
+        body { margin: 0; background: #000; color: white; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; transition: background 0.4s; }
+        
+        .screen { display: none; height: 100%; width: 100%; flex-direction: column; align-items: center; justify-content: center; position: absolute; top: 0; left: 0; text-align: center; padding: 20px; box-sizing: border-box; }
+        .active { display: flex; z-index: 10; }
+
+        .input-field { width: 85%; max-width: 300px; padding: 18px; margin: 10px 0; border-radius: 12px; border: none; background: #1a1a1a; color: white; font-size: 1rem; font-family: 'Inter'; text-align: center; }
+        
+        #radar-frame { width: 100%; height: 100%; border: none; background: #000; }
+        #btn-back-menu { position: fixed; bottom: 15px; left: 15px; z-index: 100; background: rgba(0,0,0,0.7); color: white; border: 1px solid #333; padding: 8px 12px; border-radius: 8px; font-size: 11px; text-decoration: none; font-weight: bold; }
+
+        .menu-btn { display: block; width: 100%; max-width: 280px; padding: 18px; margin: 10px; border-radius: 12px; border: 2px solid var(--accent); background: transparent; color: white; font-weight: 900; font-size: 1.1rem; text-decoration: none; cursor: pointer; transition: 0.2s; }
+        .radar-button { width: 220px; height: 220px; border-radius: 50%; border: 8px solid white; background: transparent; color: white; font-size: 1.6rem; font-weight: 900; transition: 0.3s; }
+        .radar-button:disabled { opacity: 0.3; transform: scale(0.9); }
+        
+        @keyframes blink { from { opacity: 1; } to { opacity: 0.3; } }
+        .tension { animation: blink 0.15s infinite alternate; }
+    </style>
+</head>
+<body>
+
+    <div id="screen-login" class="screen active">
+        <h1 style="color:var(--accent); margin-bottom: 5px;">HOLA!</h1>
+        <p style="color: #666; margin-bottom: 25px;">Identifícate para participar</p>
+        <input type="text" id="reg-nombre" class="input-field" placeholder="Tu Nombre o Apodo">
+        <input type="text" id="reg-mesa" class="input-field" placeholder="Tu Mesa (ej. 4)">
+        <button class="menu-btn" onclick="requestTorchPermission(); registerUser()" style="background: var(--accent);">ENTRAR</button>
+    </div>
+
+    <div id="screen-welcome" class="screen">
+        <h1 id="welcome-title" style="color:var(--accent); font-size: 1.4rem;">T&T</h1>
+        <button class="menu-btn" onclick="openRadar()">🕹️ ENTRAR AL RADAR</button>
+        <button class="menu-btn" style="border-color:var(--dj); color:var(--dj)" onclick="showScreen('screen-dj')">🎵 PEDIR CANCIÓN</button>
+    </div>
+
+    <div id="screen-main-content" class="screen">
+        <a href="#" id="btn-back-menu" onclick="showScreen('screen-welcome')">← VOLVER AL MENÚ</a>
+        <iframe id="radar-frame" src=""></iframe>
+    </div>
+
+    <div id="screen-radar" class="screen" style="z-index: 200;">
+        <h2 id="status-text" style="text-transform: uppercase;">¡PREPARADOS!</h2>
+        <button id="radar-btn" class="radar-button" disabled>ESPERA...</button>
+    </div>
+
+    <div id="screen-dj" class="screen">
+        <h2 style="color:var(--dj)">MENSAJE AL DJ</h2>
+        <input type="text" id="dj-input" class="input-field" placeholder="Escribe tu petición...">
+        <button id="send-dj-btn" class="menu-btn" style="border-color:var(--dj); color:var(--dj)">ENVIAR</button>
+        <button onclick="showScreen('screen-welcome')" style="color:#666; background:none; border:none; margin-top:20px; font-weight: bold;">← VOLVER</button>
+    </div>
+
+    <script>
+        let myId = "";
+        let videoTrack = null;
+        let flashInterval = null;
+        let currentColor = "#ffffff"; // Color por defecto
+        const bpmInterval = (60000 / 128) / 2; // Sincronización 128 BPM
+       const socket = new WebSocket('wss://tapapp.onrender.com/ws');
+
+        // --- NUEVO: AVISO DE PRESENCIA AL CONECTAR ---
+        socket.onopen = () => {
+            console.log("Conexión establecida");
+            // Si el usuario ya tiene nombre (porque refrescó la página), avisamos al admin
+            if (myId) {
+                socket.send(JSON.stringify({ "type": "presence", "user_id": myId }));
+            }
+        };
+
+        // Función para calcular si el texto debe ser blanco o negro según el fondo
+        function getContrastYIQ(hexcolor){
+            hexcolor = hexcolor.replace("#", "");
+            var r = parseInt(hexcolor.substr(0,2),16);
+            var g = parseInt(hexcolor.substr(2,2),16);
+            var b = parseInt(hexcolor.substr(4,2),16);
+            var yiq = ((r*299)+(g*587)+(b*114))/1000;
+            return (yiq >= 128) ? 'black' : 'white';
+        }
+
+        async function requestTorchPermission() {
+    try {
+        // Pedimos el stream de video
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: "environment" } 
+        });
+        videoTrack = stream.getVideoTracks()[0];
+        console.log("Linterna lista y vinculada");
+    } catch (e) { 
+        console.log("Error al recuperar linterna:", e); 
+    }
+}
+
+        function checkUser() {
+    const savedName = localStorage.getItem('tt_user_name');
+    const savedTable = localStorage.getItem('tt_user_table');
+    if (savedName && savedTable) {
+        myId = `${savedName} (Mesa ${savedTable})`;
+        document.getElementById('welcome-title').innerText = `HOLA, ${savedName.toUpperCase()}`;
+        
+        // INTENTAR RE-ACTIVAR LINTERNA AUTOMÁTICAMENTE AL VOLVER
+        requestTorchPermission(); 
+        
+        showScreen('screen-welcome');
+    }
+}
+
+        function registerUser() {
+            const n = document.getElementById('reg-nombre').value.trim();
+            const m = document.getElementById('reg-mesa').value.trim();
+            if (n && m) {
+                localStorage.setItem('tt_user_name', n);
+                localStorage.setItem('tt_user_table', m);
+                myId = `${n} (Mesa ${m})`;
+                document.getElementById('welcome-title').innerText = `HOLA, ${n.toUpperCase()}`;
+                showScreen('screen-welcome');
+            } else {
+                alert("Por favor, pon tu nombre y mesa.");
+            }
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function openRadar() {
+            document.getElementById('radar-frame').src = "https://tapesantapas.streamlit.app/?embed=true"; 
+            showScreen('screen-main-content');
+        }
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            const body = document.body;
+            const btn = document.getElementById('radar-btn');
+            const status = document.getElementById('status-text');
+
+            if (data.action === "start_flashing") {
+                // Actualizamos el color con el que viene del Admin
+                currentColor = data.color || "#ffffff"; 
+                
+                if (document.getElementById('flash-overlay')) document.getElementById('flash-overlay').remove();
+                const overlay = document.createElement('div');
+                overlay.id = 'flash-overlay';
+                overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column;";
+                overlay.innerHTML = `<h1 style="color:gray; font-size:1rem; opacity:0.5;">LINTERNAS @ 128BPM</h1>`;
+                document.body.appendChild(overlay);
+
+                flashInterval = setInterval(async () => {
+    const isBlack = overlay.style.backgroundColor === 'black' || overlay.style.backgroundColor === 'rgb(0, 0, 0)';
+    overlay.style.backgroundColor = isBlack ? currentColor : 'black';
+    
+    // Si tenemos el track pero se detuvo, o si no lo tenemos, intentamos recuperarlo
+    if (videoTrack && videoTrack.readyState === 'live') {
+        try { 
+            await videoTrack.applyConstraints({ advanced: [{ torch: isBlack }] }); 
+        } catch (e) { console.log("Error Flash:", e); }
+    } else {
+        // Si el track murió, intentamos re-pedirlo en caliente
+        requestTorchPermission();
+    }
+}, bpmInterval);
+            }
+
+            if (data.action === "stop_flashing") {
+                clearInterval(flashInterval);
+                const overlay = document.getElementById('flash-overlay');
+                if (videoTrack) videoTrack.applyConstraints({ advanced: [{ torch: false }] }).catch(() => {});
+                
+                if (overlay) {
+                    const isWinner = Math.random() < 0.05;
+                    if (isWinner) {
+                        overlay.style.backgroundColor = currentColor;
+                        overlay.innerHTML = `<h1 style="color:${getContrastYIQ(currentColor)}; font-size:2rem; padding:20px; text-align:center;">¡ERES EL ELEGIDO! 🔦</h1>`;
+                        if (videoTrack) videoTrack.applyConstraints({ advanced: [{ torch: true }] }).catch(() => {});
+                    } else {
+                        overlay.style.backgroundColor = 'black';
+                        overlay.innerHTML = '<h1 style="color:#333; font-size:1rem;">SUERTE LA PRÓXIMA...</h1>';
+                        setTimeout(() => overlay.remove(), 3000);
+                    }
+                }
+            }
+
+            if (data.action === "prepare_contest") {
+                showScreen('screen-radar');
+                // El fondo del radar también se adapta al color del Admin
+                body.style.backgroundColor = data.color || "var(--accent-pale)";
+                btn.disabled = true;
+                btn.innerText = "ESPERA...";
+                status.innerText = "¡PREPARADOS!";
+            }
+
+            if (data.action === "start_tension") {
+                body.classList.add('tension');
+                status.innerText = "¡ATENTOS!";
+            }
+
+            if (data.action === "go_pulsar") {
+                body.classList.remove('tension');
+                body.style.backgroundColor = "#000";
+                btn.disabled = false;
+                btn.innerText = "¡DALE YA!";
+                status.innerText = "¡PULSA AHORA!";
+            }
+
+            if (data.action === "winner_found") {
+                btn.disabled = true;
+                if (data.winner_id === myId) {
+                    body.style.backgroundColor = "#2ecc71";
+                    btn.innerText = "¡GANASTE!";
+                } else {
+                    body.style.backgroundColor = "#e74c3c";
+                    btn.innerText = "CASI...";
+                }
+            }
+
+            if (data.action === "reset") {
+                if (document.getElementById('flash-overlay')) document.getElementById('flash-overlay').remove();
+                clearInterval(flashInterval);
+                if (videoTrack) videoTrack.applyConstraints({ advanced: [{ torch: false }] }).catch(() => {});
+                showScreen('screen-welcome');
+                body.style.backgroundColor = "#000";
+                body.classList.remove('tension');
+                btn.disabled = false;
+            }
+        };
+
+        document.getElementById('radar-btn').onclick = () => {
+            socket.send(JSON.stringify({ "type": "player_click", "user_id": myId }));
+        };
+
+        document.getElementById('send-dj-btn').onclick = () => {
+            const txt = document.getElementById('dj-input').value;
+            if(txt && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({ "type": "dj_note", "text": txt, "user_id": myId }));
+                alert("Enviado al DJ");
+                document.getElementById('dj-input').value = "";
+                showScreen('screen-welcome');
+            }
+        };
+
+        checkUser();
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible" && (!socket || socket.readyState !== 1)) {
+                location.reload();
+            }
+        });
+    </script> 
+</body>
+</html>
