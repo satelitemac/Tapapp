@@ -24,26 +24,35 @@ async def websocket_endpoint(websocket: WebSocket):
             # Recibimos mensajes de cualquier cliente (Admin o Móvil)
             data = await websocket.receive_text()
             message = json.loads(data)
-            print(f"Recibido: {message}") # Esto aparecerá en los logs de Render
+            print(f"Recibido: {message}") 
 
-            # 1. LÓGICA DEL RADAR: Si un jugador pulsa y no hay ganador aún
-            if message.get("type") == "player_click" and winner_id is None:
-                winner_id = message.get("user_id")
-                await broadcast({"action": "winner_found", "winner_id": winner_id})
+            # 1. LÓGICA DEL RADAR: El primero que pulsa gana si no hay ganador
+            if message.get("type") == "player_click":
+                if winner_id is None:
+                    winner_id = message.get("user_id")
+                    await broadcast({"action": "winner_found", "winner_id": winner_id})
             
-            # 2. LÓGICA DE ADMIN: Si envías una orden (prepare, tension, go o reset)
+            # 2. LÓGICA DE ADMIN: Órdenes de control
             elif "action" in message:
                 if message["action"] == "reset":
                     winner_id = None
+                
+                # SORTEO DE LUCES: Si el admin detiene el parpadeo y envía un ganador forzado
+                if message["action"] == "stop_flashing" and "force_winner" in message:
+                    winner_id = message["force_winner"]
+                    # Avisamos oficialmente a todos quién es el ganador
+                    await broadcast({"action": "winner_found", "winner_id": winner_id})
+                
+                # Reenviamos la orden original (prepare, stop_flashing, etc.) a todos
                 await broadcast(message)
             
-            # 3. LÓGICA VJ/DJ: Mensajes de notas o peticiones musicales
-            # Se reenvían directamente a todos los conectados (incluyendo el Admin)
+            # 3. LÓGICA VJ/DJ Y OTROS: Peticiones musicales, etc.
             else:
                 await broadcast(message)
 
     except WebSocketDisconnect:
-        active_connections.remove(websocket)
+        if websocket in active_connections:
+            active_connections.remove(websocket)
         print("Conexión cerrada")
 
 async def broadcast(message: dict):
