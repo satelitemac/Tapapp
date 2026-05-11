@@ -8,19 +8,14 @@
     <style>
         :root { --accent: #ff5e00; --accent-pale: #ff8c42; --dj: #00d4ff; }
         body { margin: 0; background: #000; color: white; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; transition: background 0.4s; }
-        
         .screen { display: none; height: 100%; width: 100%; flex-direction: column; align-items: center; justify-content: center; position: absolute; top: 0; left: 0; text-align: center; padding: 20px; box-sizing: border-box; }
         .active { display: flex; z-index: 10; }
-
         .input-field { width: 85%; max-width: 300px; padding: 18px; margin: 10px 0; border-radius: 12px; border: none; background: #1a1a1a; color: white; font-size: 1rem; font-family: 'Inter'; text-align: center; }
-        
         .menu-btn { display: block; width: 100%; max-width: 280px; padding: 18px; margin: 10px; border-radius: 12px; border: 2px solid var(--accent); background: transparent; color: white; font-weight: 900; font-size: 1.1rem; text-decoration: none; cursor: pointer; transition: 0.2s; }
         .radar-button { width: 220px; height: 220px; border-radius: 50%; border: 8px solid white; background: transparent; color: white; font-size: 1.6rem; font-weight: 900; transition: 0.3s; }
         .radar-button:disabled { opacity: 0.3; transform: scale(0.9); }
-        
         @keyframes blink { from { opacity: 1; } to { opacity: 0.3; } }
         .tension { animation: blink 0.15s infinite alternate; }
-
         #flash-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:none; align-items:center; justify-content:center; flex-direction:column; text-align:center; }
     </style>
 </head>
@@ -65,7 +60,7 @@
         let videoTrack = null;
         let flashInterval = null;
         let currentColor = "#ffffff";
-        let contestColor = "#000000"; // Color dinámico para el concurso
+        let contestColor = "#000000";
         const socket = new WebSocket('wss://tapapp.onrender.com/ws');
 
         const body = document.body;
@@ -138,9 +133,53 @@
 
             if (data.action === "reset") {
                 stopAllEffects();
+                body.classList.remove('tension');
                 body.style.backgroundColor = "#000";
                 showScreen('screen-welcome');
                 return;
+            }
+
+            if (data.action === "prepare_contest") {
+                stopAllEffects();
+                body.classList.remove('tension');
+                contestColor = data.color || "#000000";
+                body.style.backgroundColor = contestColor;
+                const txtCol = getContrastYIQ(contestColor);
+                statusTxt.style.color = txtCol;
+                radarBtn.style.color = txtCol;
+                radarBtn.style.borderColor = txtCol;
+                showScreen('screen-radar');
+                radarBtn.disabled = true;
+                radarBtn.innerText = "ESPERA...";
+                statusTxt.innerText = "¡PREPARADOS!";
+            }
+
+            if (data.action === "start_tension") {
+                body.classList.add('tension');
+                statusTxt.innerText = "¡ATENTOS!";
+            }
+
+            if (data.action === "go_pulsar") {
+                body.classList.remove('tension');
+                radarBtn.disabled = false;
+                radarBtn.innerText = "¡DALE YA!";
+                statusTxt.innerText = "¡PULSA!";
+            }
+
+            if (data.action === "winner_found") {
+                body.classList.remove('tension');
+                radarBtn.disabled = true;
+                if (data.winner_id === myId) {
+                    body.style.backgroundColor = "rgba(46, 204, 113, 0.95)";
+                    radarBtn.innerText = "¡GANASTE!";
+                } else {
+                    body.style.backgroundColor = "rgba(139, 0, 0, 0.95)";
+                    radarBtn.innerText = "CASI...";
+                }
+                setTimeout(() => {
+                    body.style.backgroundColor = "#000";
+                    showScreen('screen-welcome');
+                }, 6000);
             }
 
             if (data.action === "start_flashing") {
@@ -169,51 +208,6 @@
                 } else {
                     overlay.style.backgroundColor = "black";
                     overlay.innerHTML = `<h1 style="color:#222;">SUERTE...</h1>`;
-                    if (videoTrack) videoTrack.applyConstraints({ advanced: [{ torch: false }] }).catch(() => {});
-                }
-            }
-
-            // --- DINÁMICA RADAR ---
-            if (data.action === "prepare_contest") {
-                stopAllEffects();
-                contestColor = data.color || "#000000";
-                body.style.backgroundColor = contestColor;
-                const txtCol = getContrastYIQ(contestColor);
-                statusTxt.style.color = txtCol;
-                radarBtn.style.color = txtCol;
-                radarBtn.style.borderColor = txtCol;
-                showScreen('screen-radar');
-                radarBtn.disabled = true;
-                radarBtn.innerText = "ESPERA...";
-                statusTxt.innerText = "¡PREPARADOS!";
-            }
-
-            if (data.action === "start_tension") {
-                body.classList.add('tension');
-                statusTxt.innerText = "¡ATENTOS!";
-            }
-
-            if (data.action === "go_pulsar") {
-                body.classList.remove('tension');
-                radarBtn.disabled = false;
-                radarBtn.innerText = "¡DALE YA!";
-                statusTxt.innerText = "¡PULSA!";
-            }
-
-            if (data.action === "winner_found") {
-                radarBtn.disabled = true;
-                if (data.winner_id === myId) {
-                    body.style.backgroundColor = "rgba(46, 204, 113, 0.95)"; // Superposición verde
-                    radarBtn.innerText = "¡GANASTE!";
-                    radarBtn.style.color = "white";
-                    radarBtn.style.borderColor = "white";
-                    statusTxt.style.color = "white";
-                } else {
-                    body.style.backgroundColor = "rgba(139, 0, 0, 0.95)"; // Superposición rojo oscuro
-                    radarBtn.innerText = "CASI...";
-                    radarBtn.style.color = "rgba(255,255,255,0.4)";
-                    radarBtn.style.borderColor = "rgba(255,255,255,0.4)";
-                    statusTxt.style.color = "rgba(255,255,255,0.4)";
                 }
             }
         };
