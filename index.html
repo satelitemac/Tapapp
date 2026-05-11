@@ -116,22 +116,25 @@
 
         socket.onmessage = async (event) => {
             const data = JSON.parse(event.data);
+            const body = document.body;
+            const btn = document.getElementById('radar-btn');
+            const status = document.getElementById('status-text');
 
-            // 1. RESET
+            // 1. RESET (Vuelta total al inicio)
             if (data.action === "reset") {
                 stopAllEffects();
                 location.reload();
                 return;
             }
 
-            // 2. LINTERNAS: PARPADEO
+            // 2. LINTERNAS: INICIAR PARPADEO
             if (data.action === "start_flashing") {
                 stopAllEffects();
                 currentColor = data.color || "#ffffff";
                 const overlay = document.createElement('div');
                 overlay.id = 'flash-overlay';
-                overlay.style.backgroundColor = 'black';
-                overlay.innerHTML = `<h1 style="color:white; opacity:0.2; font-size:0.8rem;">MODO LINTERNA</h1>`;
+                overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:10000; display:flex; align-items:center; justify-content:center; flex-direction:column;";
+                overlay.innerHTML = `<h1 style="color:white; opacity:0.3; font-size:0.8rem; font-family:sans-serif;">MODO LINTERNA</h1>`;
                 document.body.appendChild(overlay);
 
                 flashInterval = setInterval(async () => {
@@ -143,24 +146,37 @@
                 }, 120);
             }
 
-            // 3. LINTERNAS: GANADOR SORTEO
+            // 3. LINTERNAS: FINAL DEL SORTEO (BLOQUEO DE PANTALLA)
             if (data.action === "light_winner_found") {
                 if (flashInterval) clearInterval(flashInterval);
-                const overlay = document.getElementById('flash-overlay') || document.createElement('div');
-                if(!overlay.id) { overlay.id = 'flash-overlay'; document.body.appendChild(overlay); }
+                let overlay = document.getElementById('flash-overlay');
+                if(!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.id = 'flash-overlay';
+                    overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:flex; align-items:center; justify-content:center; text-align:center;";
+                    document.body.appendChild(overlay);
+                }
                 
+                overlay.style.display = "flex"; // Aseguramos que cubra todo
+
                 if (data.winner_id === myId) {
+                    // GANADOR LINTERNAS
                     overlay.style.backgroundColor = data.color || "white";
-                    overlay.innerHTML = `<h1 style="color:black; font-size:2rem; font-weight:900; text-align:center;">🏆 ERES EL ELEGIDO</h1>`;
+                    overlay.innerHTML = `<div style="color:black; padding:20px;">
+                        <h1 style="font-size:3rem; margin:0;">🏆</h1>
+                        <h1 style="font-size:1.8rem; font-weight:900;">¡ERES EL ELEGIDO!</h1>
+                        <p style="font-weight:bold;">MANTÉN TU MÓVIL EN ALTO</p>
+                    </div>`;
                     if (videoTrack) videoTrack.applyConstraints({ advanced: [{ torch: true }] }).catch(() => {});
                 } else {
+                    // PERDEDOR LINTERNAS
                     overlay.style.backgroundColor = "black";
-                    overlay.innerHTML = "";
+                    overlay.innerHTML = `<h1 style="color:#222; font-size:1rem; font-weight:900;">SUERTE LA PRÓXIMA...</h1>`;
                     if (videoTrack) videoTrack.applyConstraints({ advanced: [{ torch: false }] }).catch(() => {});
                 }
             }
 
-            // 4. RADAR
+            // 4. RADAR: PREPARAR
             if (data.action === "prepare_contest") {
                 stopAllEffects();
                 showScreen('screen-radar');
@@ -170,11 +186,13 @@
                 status.innerText = "¡PREPARADOS!";
             }
 
+            // 5. RADAR: TENSIÓN
             if (data.action === "start_tension") {
                 body.classList.add('tension');
                 status.innerText = "¡ATENTOS!";
             }
 
+            // 6. RADAR: ¡YA!
             if (data.action === "go_pulsar") {
                 body.classList.remove('tension');
                 btn.disabled = false;
@@ -182,6 +200,7 @@
                 status.innerText = "¡PULSA!";
             }
 
+            // 7. RADAR: GANADOR POR CLICK
             if (data.action === "winner_found") {
                 btn.disabled = true;
                 if (data.winner_id === myId) {
