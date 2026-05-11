@@ -3,72 +3,66 @@ import json
 
 app = FastAPI()
 
-# Diccionario para mapear user_id -> WebSocket
-# Esto nos permite saber exactamente quién está conectado
+# Diccionario real: user_id -> WebSocket
 active_users = {} 
 winner_id = None
 
 @app.get("/")
 async def root():
-    return {"status": "T&T Super-Server Online", "msg": "Servidor con Gestión de Identidad Activo"}
+    # Si entras aquí con el navegador, verás quién está conectado de verdad
+    return {
+        "status": "Servidor T&T Activo",
+        "conectados": list(active_users.keys()),
+        "total": len(active_users)
+    }
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     global winner_id
     await websocket.accept()
-    
-    current_user_id = None
+    current_id = None
     
     try:
         while True:
             data = await websocket.receive_text()
             message = json.loads(data)
             
-            # REGISTRO: Lo primero que hace cualquier cliente al conectar
-            if message.get("type") == "presence" or "user_id" in message:
-                user_id = message.get("user_id")
-                if user_id:
-                    current_user_id = user_id
-                    active_users[user_id] = websocket
-                    # Notificamos al Admin que hay alguien nuevo
-                    await broadcast({"type": "presence", "user_id": user_id, "count": len(active_users)})
+            # --- AUTO-REGISTRO ---
+            # Si el mensaje trae un user_id, lo registramos inmediatamente si no estaba
+            u_id = message.get("user_id")
+            if u_id:
+                current_id = u_id
+                if u_id not in active_users:
+                    print(f"✨ Registrando nuevo usuario: {u_id}")
+                active_users[u_id] = websocket
 
-            # 1. LÓGICA DEL RADAR
+            # LÓGICA DE RADAR
             if message.get("type") == "player_click":
                 if winner_id is None:
-                    winner_id = message.get("user_id")
+                    winner_id = u_id
                     await broadcast({"action": "winner_found", "winner_id": winner_id})
             
-            # 2. LÓGICA DE ADMIN
+            # LÓGICA DE ADMIN
             elif "action" in message:
-                if message["action"] == "reset":
-                    winner_id = None
-                
+                if message["action"] == "reset": winner_id = None
                 if message["action"] == "stop_flashing" and "force_winner" in message:
                     winner_id = message["force_winner"]
                     await broadcast({"action": "winner_found", "winner_id": winner_id})
-                
                 await broadcast(message)
             
-            # 3. MENSAJES/NOTAS (VJ/DJ)
+            # PETICIONES Y OTROS
             else:
-                # Reenviamos el mensaje a todos para que el Admin y DJ lo vean
                 await broadcast(message)
 
     except WebSocketDisconnect:
-        if current_user_id in active_users:
-            del active_users[current_user_id]
-        print(f"Usuario {current_user_id} desconectado")
+        if current_id in active_users:
+            del active_users[current_id]
+        print(f"❌ Desconectado: {current_id}")
 
 async def broadcast(message: dict):
-    # Enviamos a todos los que están en nuestro diccionario de activos
-    message_str = json.dumps(message)
-    # Hacemos una copia de las llaves para evitar errores si alguien se desconecta durante el loop
-    for user_id in list(active_users.keys()):
+    msg_str = json.dumps(message)
+    for uid in list(active_users.keys()):
         try:
-            ws = active_users[user_id]
-            await ws.send_text(message_str)
+            await active_users[uid].send_text(msg_str)
         except:
-            # Si falla, limpiamos ese usuario
-            if user_id in active_users:
-                del active_users[user_id]
+            if uid in active_users: del active_users[uid]
