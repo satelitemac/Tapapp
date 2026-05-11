@@ -46,7 +46,7 @@
         <button onclick="showScreen('screen-welcome')" style="color:#666; background:none; border:none; margin-top:20px; font-weight:bold;">← VOLVER</button>
     </div>
 
-    <div id="screen-radar" class="screen" style="z-index: 200; background: #000;">
+    <div id="screen-radar" class="screen" style="z-index: 200;">
         <h2 id="status-text" style="text-transform: uppercase;">¡PREPARADOS!</h2>
         <button id="radar-btn" class="radar-button" disabled>ESPERA...</button>
     </div>
@@ -65,6 +65,7 @@
         let videoTrack = null;
         let flashInterval = null;
         let currentColor = "#ffffff";
+        let contestColor = "#000000"; // Color dinámico para el concurso
         const socket = new WebSocket('wss://tapapp.onrender.com/ws');
 
         const body = document.body;
@@ -72,7 +73,6 @@
         const statusTxt = document.getElementById('status-text');
         const overlay = document.getElementById('flash-overlay');
 
-        // FUNCIÓN MAESTRA: Activa cámara y luego registra
         async function initApp() {
             await requestTorchPermission();
             registerUser();
@@ -81,13 +81,9 @@
         async function requestTorchPermission() {
             try {
                 if (videoTrack && videoTrack.readyState === 'live') return;
-                
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 videoTrack = stream.getVideoTracks()[0];
-                console.log("Cámara vinculada");
-            } catch (e) { 
-                console.log("Cámara no disponible"); 
-            }
+            } catch (e) { console.log("Cámara no disponible"); }
         }
 
         function registerUser() {
@@ -108,6 +104,17 @@
             if(target) target.classList.add('active');
         }
 
+        function getContrastYIQ(hexcolor){
+            if(!hexcolor || hexcolor === "transparent") return 'white';
+            hexcolor = hexcolor.replace("#", "");
+            if(hexcolor.length === 3) hexcolor = hexcolor.split('').map(c => c + c).join('');
+            const r = parseInt(hexcolor.substr(0,2),16);
+            const g = parseInt(hexcolor.substr(2,2),16);
+            const b = parseInt(hexcolor.substr(4,2),16);
+            const yiq = ((r*299)+(g*587)+(b*114))/1000;
+            return (yiq >= 128) ? 'black' : 'white';
+        }
+
         const stopAllEffects = () => {
             if (flashInterval) clearInterval(flashInterval);
             overlay.style.display = "none";
@@ -121,7 +128,6 @@
             if (savedName && savedTable) {
                 myId = `${savedName} (Mesa ${savedTable})`;
                 socket.send(JSON.stringify({ "type": "presence", "user_id": myId }));
-                // IMPORTANTE: Pedir permiso si ya estaba logueado para que la linterna funcione
                 await requestTorchPermission(); 
                 showScreen('screen-welcome');
             }
@@ -132,22 +138,18 @@
 
             if (data.action === "reset") {
                 stopAllEffects();
-                location.reload();
+                body.style.backgroundColor = "#000";
+                showScreen('screen-welcome');
                 return;
             }
 
             if (data.action === "start_flashing") {
                 stopAllEffects();
-                
-                if (!videoTrack || videoTrack.readyState !== 'live') {
-                    await requestTorchPermission();
-                }
-
+                if (!videoTrack || videoTrack.readyState !== 'live') await requestTorchPermission();
                 currentColor = data.color || "#ffffff";
                 overlay.style.display = "flex";
                 overlay.style.backgroundColor = "black";
                 overlay.innerHTML = `<h1 style="color:white; opacity:0.3; font-size:0.8rem;">SINCRO LINTERNAS...</h1>`;
-
                 flashInterval = setInterval(async () => {
                     const isBlack = overlay.style.backgroundColor === 'black' || overlay.style.backgroundColor === 'rgb(0, 0, 0)';
                     overlay.style.backgroundColor = isBlack ? currentColor : 'black';
@@ -160,41 +162,63 @@
             if (data.action === "light_winner_found") {
                 if (flashInterval) clearInterval(flashInterval);
                 overlay.style.display = "flex";
-
                 if (data.winner_id === myId) {
                     overlay.style.backgroundColor = data.color || "white";
-                    overlay.innerHTML = `<div style="color:black; padding:20px;">
-                        <h1 style="font-size:3rem; margin:0;">🏆</h1>
-                        <h1 style="font-size:1.8rem; font-weight:900;">¡ERES EL ELEGIDO!</h1>
-                        <p style="font-weight:bold;">MANTÉN EL MÓVIL EN ALTO</p>
-                    </div>`;
+                    overlay.innerHTML = `<div style="color:black; padding:20px;"><h1>🏆 ¡ELEGIDO!</h1></div>`;
                     if (videoTrack) videoTrack.applyConstraints({ advanced: [{ torch: true }] }).catch(() => {});
                 } else {
                     overlay.style.backgroundColor = "black";
-                    overlay.innerHTML = `<h1 style="color:#222; font-size:1rem; font-weight:900;">SUERTE LA PRÓXIMA...</h1>`;
+                    overlay.innerHTML = `<h1 style="color:#222;">SUERTE...</h1>`;
                     if (videoTrack) videoTrack.applyConstraints({ advanced: [{ torch: false }] }).catch(() => {});
                 }
             }
 
+            // --- DINÁMICA RADAR ---
             if (data.action === "prepare_contest") {
                 stopAllEffects();
+                contestColor = data.color || "#000000";
+                body.style.backgroundColor = contestColor;
+                const txtCol = getContrastYIQ(contestColor);
+                statusTxt.style.color = txtCol;
+                radarBtn.style.color = txtCol;
+                radarBtn.style.borderColor = txtCol;
                 showScreen('screen-radar');
-                body.style.backgroundColor = "#000";
                 radarBtn.disabled = true;
                 radarBtn.innerText = "ESPERA...";
                 statusTxt.innerText = "¡PREPARADOS!";
             }
 
-            if (data.action === "start_tension") { body.classList.add('tension'); statusTxt.innerText = "¡ATENTOS!"; }
-            if (data.action === "go_pulsar") { body.classList.remove('tension'); radarBtn.disabled = false; radarBtn.innerText = "¡DALE YA!"; statusTxt.innerText = "¡PULSA!"; }
+            if (data.action === "start_tension") {
+                body.classList.add('tension');
+                statusTxt.innerText = "¡ATENTOS!";
+            }
+
+            if (data.action === "go_pulsar") {
+                body.classList.remove('tension');
+                radarBtn.disabled = false;
+                radarBtn.innerText = "¡DALE YA!";
+                statusTxt.innerText = "¡PULSA!";
+            }
+
             if (data.action === "winner_found") {
                 radarBtn.disabled = true;
-                if (data.winner_id === myId) { body.style.backgroundColor = "#2ecc71"; radarBtn.innerText = "¡GANASTE!"; }
-                else { body.style.backgroundColor = "#e74c3c"; radarBtn.innerText = "CASI..."; }
+                if (data.winner_id === myId) {
+                    body.style.backgroundColor = "rgba(46, 204, 113, 0.95)"; // Superposición verde
+                    radarBtn.innerText = "¡GANASTE!";
+                    radarBtn.style.color = "white";
+                    radarBtn.style.borderColor = "white";
+                    statusTxt.style.color = "white";
+                } else {
+                    body.style.backgroundColor = "rgba(139, 0, 0, 0.95)"; // Superposición rojo oscuro
+                    radarBtn.innerText = "CASI...";
+                    radarBtn.style.color = "rgba(255,255,255,0.4)";
+                    radarBtn.style.borderColor = "rgba(255,255,255,0.4)";
+                    statusTxt.style.color = "rgba(255,255,255,0.4)";
+                }
             }
         };
 
-        radarBtn.onclick = () => { socket.send(JSON.stringify({ "type": "player_click", "user_id": myId })); };
+        radarBtn.onclick = () => socket.send(JSON.stringify({ "type": "player_click", "user_id": myId }));
 
         document.getElementById('send-dj-btn').onclick = () => {
             const txt = document.getElementById('dj-input').value;
