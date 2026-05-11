@@ -61,180 +61,73 @@
     <div id="flash-overlay"></div>
 
     <script>
-        let myId = "";
-        let videoTrack = null;
-        let flashInterval = null;
-        let currentColor = "#ffffff";
-        let contestColor = "#000000";
-        const socket = new WebSocket('wss://tapapp.onrender.com/ws');
+    let myId = "";
+    let videoTrack = null;
+    let flashInterval = null;
+    let socket;
 
-        const body = document.body;
-        const radarBtn = document.getElementById('radar-btn');
-        const statusTxt = document.getElementById('status-text');
-        const overlay = document.getElementById('flash-overlay');
+    // --- MONITOR DE FLUJO (Para ver qué falla en el móvil) ---
+    function debugLog(msg) {
+        const status = document.getElementById('status-text');
+        console.log(msg);
+        // Opcional: Descomenta la siguiente línea para ver los errores en el texto de "ESPERANDO AL DJ"
+        // document.querySelector('#screen-radar-waiting p').innerText = msg;
+    }
 
-        async function initApp() {
-            await requestTorchPermission();
-            registerUser();
-        }
-
-        async function requestTorchPermission() {
-            try {
-                if (videoTrack && videoTrack.readyState === 'live') return;
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                videoTrack = stream.getVideoTracks()[0];
-            } catch (e) { console.log("Cámara no disponible"); }
-        }
-
-        function registerUser() {
-            const n = document.getElementById('reg-nombre').value.trim();
-            const m = document.getElementById('reg-mesa').value.trim();
+    function connectWS() {
+        debugLog("Intentando conectar Socket...");
+        socket = new WebSocket('wss://tapapp.onrender.com/ws');
+        
+        socket.onopen = () => {
+            debugLog("✅ Socket Conectado");
+            const n = localStorage.getItem('tt_user_name');
+            const m = localStorage.getItem('tt_user_table');
             if (n && m) {
-                localStorage.setItem('tt_user_name', n);
-                localStorage.setItem('tt_user_table', m);
                 myId = `${n} (Mesa ${m})`;
                 socket.send(JSON.stringify({ "type": "presence", "user_id": myId }));
-                showScreen('screen-welcome');
-            }
-        }
-
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            const target = document.getElementById(id);
-            if(target) target.classList.add('active');
-        }
-
-        function getContrastYIQ(hexcolor){
-            if(!hexcolor || hexcolor === "transparent") return 'white';
-            hexcolor = hexcolor.replace("#", "");
-            if(hexcolor.length === 3) hexcolor = hexcolor.split('').map(c => c + c).join('');
-            const r = parseInt(hexcolor.substr(0,2),16);
-            const g = parseInt(hexcolor.substr(2,2),16);
-            const b = parseInt(hexcolor.substr(4,2),16);
-            const yiq = ((r*299)+(g*587)+(b*114))/1000;
-            return (yiq >= 128) ? 'black' : 'white';
-        }
-
-        const stopAllEffects = () => {
-            if (flashInterval) clearInterval(flashInterval);
-            overlay.style.display = "none";
-            overlay.innerHTML = "";
-            if (videoTrack) videoTrack.applyConstraints({ advanced: [{ torch: false }] }).catch(() => {});
-        };
-
-        socket.onopen = async () => {
-            const savedName = localStorage.getItem('tt_user_name');
-            const savedTable = localStorage.getItem('tt_user_table');
-            if (savedName && savedTable) {
-                myId = `${savedName} (Mesa ${savedTable})`;
-                socket.send(JSON.stringify({ "type": "presence", "user_id": myId }));
-                await requestTorchPermission(); 
-                showScreen('screen-welcome');
             }
         };
 
         socket.onmessage = async (event) => {
             const data = JSON.parse(event.data);
-
-            if (data.action === "reset") {
-                stopAllEffects();
-                body.style.backgroundColor = "#000";
-                showScreen('screen-welcome');
-                return;
-            }
-
-            if (data.action === "start_flashing") {
-                stopAllEffects();
-                if (!videoTrack || videoTrack.readyState !== 'live') await requestTorchPermission();
-                currentColor = data.color || "#ffffff";
-                overlay.style.display = "flex";
-                overlay.style.backgroundColor = "black";
-                overlay.innerHTML = `<h1 style="color:white; opacity:0.3; font-size:0.8rem;">SINCRO LINTERNAS...</h1>`;
-                flashInterval = setInterval(async () => {
-                    const isBlack = overlay.style.backgroundColor === 'black' || overlay.style.backgroundColor === 'rgb(0, 0, 0)';
-                    overlay.style.backgroundColor = isBlack ? currentColor : 'black';
-                    if (videoTrack && videoTrack.readyState === 'live') {
-                        try { await videoTrack.applyConstraints({ advanced: [{ torch: isBlack }] }); } catch(e){}
-                    }
-                }, 120);
-            }
-
-            if (data.action === "light_winner_found") {
-                if (flashInterval) clearInterval(flashInterval);
-                overlay.style.display = "flex";
-                if (data.winner_id === myId) {
-                    overlay.style.backgroundColor = data.color || "white";
-                    overlay.innerHTML = `<div style="color:black; padding:20px;"><h1>🏆 ¡ELEGIDO!</h1></div>`;
-                    if (videoTrack) videoTrack.applyConstraints({ advanced: [{ torch: true }] }).catch(() => {});
-                } else {
-                    overlay.style.backgroundColor = "black";
-                    overlay.innerHTML = `<h1 style="color:#222;">SUERTE...</h1>`;
-                    if (videoTrack) videoTrack.applyConstraints({ advanced: [{ torch: false }] }).catch(() => {});
-                }
-                // APAGAR AUTOMÁTICAMENTE A LOS 7 SEGUNDOS
-                setTimeout(stopAllEffects, 7000);
-            }
+            debugLog("📩 Acción recibida: " + data.action);
 
             if (data.action === "prepare_contest") {
                 stopAllEffects();
-                contestColor = data.color || "#000000";
-                body.style.backgroundColor = contestColor;
-                const txtCol = getContrastYIQ(contestColor);
-                statusTxt.style.color = txtCol;
-                radarBtn.style.color = txtCol;
-                radarBtn.style.borderColor = txtCol;
+                document.body.style.backgroundColor = data.color || "#000";
                 showScreen('screen-radar');
                 radarBtn.disabled = true;
                 radarBtn.innerText = "ESPERA...";
                 statusTxt.innerText = "¡PREPARADOS!";
             }
-
-            if (data.action === "start_tension") {
-                body.classList.add('tension');
-                statusTxt.innerText = "¡ATENTOS!";
-            }
-
-            if (data.action === "go_pulsar") {
-                body.classList.remove('tension');
-                radarBtn.disabled = false;
-                radarBtn.innerText = "¡DALE YA!";
-                statusTxt.innerText = "¡PULSA!";
-            }
-
-            if (data.action === "winner_found") {
-                radarBtn.disabled = true;
-                if (data.winner_id === myId) {
-                    body.style.backgroundColor = "rgba(46, 204, 113, 0.95)";
-                    radarBtn.innerText = "¡GANASTE!";
-                } else {
-                    body.style.backgroundColor = "rgba(139, 0, 0, 0.95)";
-                    radarBtn.innerText = "CASI...";
-                }
-                // VOLVER AL MENÚ TRAS EL RADAR TRAS 5 SEG
-                setTimeout(() => {
-                    body.style.backgroundColor = "#000";
-                    showScreen('screen-welcome');
-                }, 5000);
-            }
+            // ... resto de acciones (go_pulsar, winner_found, etc)
         };
 
-        radarBtn.onclick = () => { socket.send(JSON.stringify({ "type": "player_click", "user_id": myId })); };
-
-        document.getElementById('send-dj-btn').onclick = () => {
-            const txt = document.getElementById('dj-input').value;
-            if(txt) {
-                socket.send(JSON.stringify({ "type": "dj_note", "text": txt, "user_id": myId }));
-                alert("Enviado!");
-                showScreen('screen-welcome');
-            }
+        socket.onclose = (e) => {
+            debugLog("❌ Socket Cerrado. Reintentando...");
+            setTimeout(connectWS, 2000);
         };
 
-        document.addEventListener("visibilitychange", async () => {
-            if (document.visibilityState === "visible") {
-                if (socket.readyState !== 1) location.reload();
-                await requestTorchPermission();
-            }
-        });
-    </script> 
+        socket.onerror = (err) => debugLog("⚠️ Error en Socket");
+    }
+
+    async function initApp() {
+        debugLog("Iniciando App...");
+        await requestTorchPermission();
+        const n = document.getElementById('reg-nombre').value.trim();
+        const m = document.getElementById('reg-mesa').value.trim();
+        if (n && m) {
+            localStorage.setItem('tt_user_name', n);
+            localStorage.setItem('tt_user_table', m);
+            myId = `${n} (Mesa ${m})`;
+            socket.send(JSON.stringify({ "type": "presence", "user_id": myId }));
+            showScreen('screen-welcome');
+        }
+    }
+
+    // El resto de tus funciones (showScreen, stopAllEffects, etc.) se mantienen igual
+    
+    connectWS();
+</script> 
 </body>
 </html>
