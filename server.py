@@ -7,7 +7,7 @@ winner_id = None
 
 @app.get("/")
 async def root():
-    return {"status": "OK", "conectados": list(active_users.keys())}
+    return {"status": "OK", "conectados": list(active_users.keys()), "total": len(active_users)}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -25,8 +25,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 current_id = u_id
                 active_users[u_id] = websocket
 
-            if msg.get("type") == "ping":
-                continue
+            if msg.get("type") == "ping": continue
 
             if msg.get("type") == "player_click":
                 if winner_id is None:
