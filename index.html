@@ -31,7 +31,7 @@
         <p style="color: #666; margin-bottom: 25px;">Identifícate para participar</p>
         <input type="text" id="reg-nombre" class="input-field" placeholder="Tu Nombre o Apodo">
         <input type="text" id="reg-mesa" class="input-field" placeholder="Tu Mesa (ej. 4)">
-        <button class="menu-btn" onclick="requestTorchPermission(); registerUser()" style="background: var(--accent);">ENTRAR</button>
+        <button class="menu-btn" onclick="initApp()" style="background: var(--accent);">ENTRAR</button>
     </div>
 
     <div id="screen-welcome" class="screen">
@@ -72,11 +72,22 @@
         const statusTxt = document.getElementById('status-text');
         const overlay = document.getElementById('flash-overlay');
 
+        // FUNCIÓN MAESTRA: Activa cámara y luego registra
+        async function initApp() {
+            await requestTorchPermission();
+            registerUser();
+        }
+
         async function requestTorchPermission() {
             try {
+                if (videoTrack && videoTrack.readyState === 'live') return;
+                
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 videoTrack = stream.getVideoTracks()[0];
-            } catch (e) { console.log("Cámara no disponible"); }
+                console.log("Cámara vinculada");
+            } catch (e) { 
+                console.log("Cámara no disponible"); 
+            }
         }
 
         function registerUser() {
@@ -104,12 +115,14 @@
             if (videoTrack) videoTrack.applyConstraints({ advanced: [{ torch: false }] }).catch(() => {});
         };
 
-        socket.onopen = () => {
+        socket.onopen = async () => {
             const savedName = localStorage.getItem('tt_user_name');
             const savedTable = localStorage.getItem('tt_user_table');
             if (savedName && savedTable) {
                 myId = `${savedName} (Mesa ${savedTable})`;
                 socket.send(JSON.stringify({ "type": "presence", "user_id": myId }));
+                // IMPORTANTE: Pedir permiso si ya estaba logueado para que la linterna funcione
+                await requestTorchPermission(); 
                 showScreen('screen-welcome');
             }
         };
@@ -117,20 +130,23 @@
         socket.onmessage = async (event) => {
             const data = JSON.parse(event.data);
 
-            // 1. RESET
             if (data.action === "reset") {
                 stopAllEffects();
                 location.reload();
                 return;
             }
 
-            // 2. LINTERNAS: INICIAR
             if (data.action === "start_flashing") {
                 stopAllEffects();
+                
+                if (!videoTrack || videoTrack.readyState !== 'live') {
+                    await requestTorchPermission();
+                }
+
                 currentColor = data.color || "#ffffff";
                 overlay.style.display = "flex";
                 overlay.style.backgroundColor = "black";
-                overlay.innerHTML = `<h1 style="color:white; opacity:0.3; font-size:0.8rem;">MODO LINTERNA</h1>`;
+                overlay.innerHTML = `<h1 style="color:white; opacity:0.3; font-size:0.8rem;">SINCRO LINTERNAS...</h1>`;
 
                 flashInterval = setInterval(async () => {
                     const isBlack = overlay.style.backgroundColor === 'black' || overlay.style.backgroundColor === 'rgb(0, 0, 0)';
@@ -141,7 +157,6 @@
                 }, 120);
             }
 
-            // 3. LINTERNAS: GANADOR
             if (data.action === "light_winner_found") {
                 if (flashInterval) clearInterval(flashInterval);
                 overlay.style.display = "flex";
@@ -151,7 +166,7 @@
                     overlay.innerHTML = `<div style="color:black; padding:20px;">
                         <h1 style="font-size:3rem; margin:0;">🏆</h1>
                         <h1 style="font-size:1.8rem; font-weight:900;">¡ERES EL ELEGIDO!</h1>
-                        <p style="font-weight:bold;">MANTÉN TU MÓVIL EN ALTO</p>
+                        <p style="font-weight:bold;">MANTÉN EL MÓVIL EN ALTO</p>
                     </div>`;
                     if (videoTrack) videoTrack.applyConstraints({ advanced: [{ torch: true }] }).catch(() => {});
                 } else {
@@ -161,7 +176,6 @@
                 }
             }
 
-            // 4. RADAR: PREPARAR
             if (data.action === "prepare_contest") {
                 stopAllEffects();
                 showScreen('screen-radar');
@@ -171,33 +185,16 @@
                 statusTxt.innerText = "¡PREPARADOS!";
             }
 
-            if (data.action === "start_tension") {
-                body.classList.add('tension');
-                statusTxt.innerText = "¡ATENTOS!";
-            }
-
-            if (data.action === "go_pulsar") {
-                body.classList.remove('tension');
-                radarBtn.disabled = false;
-                radarBtn.innerText = "¡DALE YA!";
-                statusTxt.innerText = "¡PULSA!";
-            }
-
+            if (data.action === "start_tension") { body.classList.add('tension'); statusTxt.innerText = "¡ATENTOS!"; }
+            if (data.action === "go_pulsar") { body.classList.remove('tension'); radarBtn.disabled = false; radarBtn.innerText = "¡DALE YA!"; statusTxt.innerText = "¡PULSA!"; }
             if (data.action === "winner_found") {
                 radarBtn.disabled = true;
-                if (data.winner_id === myId) {
-                    body.style.backgroundColor = "#2ecc71";
-                    radarBtn.innerText = "¡GANASTE!";
-                } else {
-                    body.style.backgroundColor = "#e74c3c";
-                    radarBtn.innerText = "CASI...";
-                }
+                if (data.winner_id === myId) { body.style.backgroundColor = "#2ecc71"; radarBtn.innerText = "¡GANASTE!"; }
+                else { body.style.backgroundColor = "#e74c3c"; radarBtn.innerText = "CASI..."; }
             }
         };
 
-        radarBtn.onclick = () => {
-            socket.send(JSON.stringify({ "type": "player_click", "user_id": myId }));
-        };
+        radarBtn.onclick = () => { socket.send(JSON.stringify({ "type": "player_click", "user_id": myId })); };
 
         document.getElementById('send-dj-btn').onclick = () => {
             const txt = document.getElementById('dj-input').value;
@@ -208,8 +205,11 @@
             }
         };
 
-        document.addEventListener("visibilitychange", () => {
-            if (document.visibilityState === "visible" && socket.readyState !== 1) location.reload();
+        document.addEventListener("visibilitychange", async () => {
+            if (document.visibilityState === "visible") {
+                if (socket.readyState !== 1) location.reload();
+                await requestTorchPermission();
+            }
         });
     </script> 
 </body>
