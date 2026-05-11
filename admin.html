@@ -97,20 +97,15 @@
 
         function sendAction(action) {
             const chosenColor = document.getElementById('action-color').value;
-            // Preparamos el mensaje básico
-            let payload = { "type": "admin_action", "action": action, "color": chosenColor };
+            let payload = { "type": "admin_action", "action": action, "color": chosenColor, "user_id": "ADMIN_PANEL" };
 
-            // LÓGICA MAESTRA: Sorteo de Linternas
             if (action === "stop_flashing") {
-                const usersArray = Array.from(activeUsers); // Miramos quién hay en tu lista
-                
+                const usersArray = Array.from(activeUsers);
                 if (usersArray.length > 0) {
-                    // Elegimos a uno al azar de la lista real de conectados
                     const luckyWinner = usersArray[Math.floor(Math.random() * usersArray.length)];
                     payload.force_winner = luckyWinner; 
-                    console.log("Sorteo realizado. Ganador: " + luckyWinner);
                 } else {
-                    alert("No hay nadie en la lista para ganar. ¡Que toquen la pantalla!");
+                    alert("No hay nadie en la lista para ganar.");
                     return;
                 }
             }
@@ -120,6 +115,44 @@
             }
 
             if (action === "reset") {
+                document.getElementById('winner-text').innerText = "ESPERANDO GANADOR...";
+                document.getElementById('winner-display').style.borderColor = '#333';
+            }
+        }
+
+        // --- ESTO ES LO QUE TE FALTABA: EL ESCUCHADOR ---
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log("Mensaje recibido:", data);
+
+            // 1. Detectar presencia de usuarios (para la lista online)
+            if (data.user_id && data.user_id !== "ADMIN_PANEL") {
+                activeUsers.add(data.user_id);
+                updateUserUI();
+            }
+
+            // 2. Mostrar peticiones musicales
+            if (data.type === "dj_note") {
+                const list = document.getElementById('notes-list');
+                if (list) {
+                    if (list.innerText.includes("Esperando canciones")) list.innerHTML = '';
+                    const div = document.createElement('div');
+                    div.className = 'note';
+                    const now = new Date();
+                    const time = now.getHours() + ":" + now.getMinutes().toString().padStart(2, '0');
+                    div.innerHTML = `<span>${time} - ${data.user_id}</span>${data.text}`;
+                    list.prepend(div);
+                }
+            }
+
+            // 3. Mostrar ganador del Radar o Linternas
+            if (data.action === "winner_found") {
+                const display = document.getElementById('winner-text');
+                display.innerHTML = `<span class="winner-anim">🏆 ${data.winner_id}</span>`;
+                document.getElementById('winner-display').style.borderColor = '#2ecc71';
+            }
+
+            if (data.action === "reset") {
                 document.getElementById('winner-text').innerText = "ESPERANDO GANADOR...";
                 document.getElementById('winner-display').style.borderColor = '#333';
             }
@@ -134,7 +167,13 @@
             localStorage.setItem('active_users', JSON.stringify(usersArray));
         }
 
-        socket.onopen = () => { console.log("✅ Admin Conectado"); updateUserUI(); };
+        socket.onopen = () => { 
+            console.log("✅ Admin Conectado");
+            // Nos presentamos al servidor
+            socket.send(JSON.stringify({ "type": "presence", "user_id": "ADMIN_PANEL" }));
+            updateUserUI(); 
+        };
+        
         socket.onclose = () => { setTimeout(() => location.reload(), 1500); };
     </script>
 </body>
