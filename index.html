@@ -68,12 +68,10 @@
 
         // --- NUEVO: AVISO DE PRESENCIA AL CONECTAR ---
         socket.onopen = () => {
-            console.log("Conexión establecida");
-            // Si el usuario ya tiene nombre (porque refrescó la página), avisamos al admin
-            if (myId) {
-                socket.send(JSON.stringify({ "type": "presence", "user_id": myId }));
-            }
-        };
+    console.log("Conectado al servidor");
+    // Avisamos al servidor quiénes somos nada más entrar
+    socket.send(JSON.stringify({ "type": "presence", "user_id": myId }));
+};
 
         // Función para calcular si el texto debe ser blanco o negro según el fondo
         function getContrastYIQ(hexcolor){
