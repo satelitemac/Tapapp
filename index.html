@@ -14,8 +14,6 @@
 
         .input-field { width: 85%; max-width: 300px; padding: 18px; margin: 10px 0; border-radius: 12px; border: none; background: #1a1a1a; color: white; font-size: 1rem; font-family: 'Inter'; text-align: center; }
         
-        #btn-back-menu { position: fixed; bottom: 15px; left: 15px; z-index: 100; background: rgba(0,0,0,0.7); color: white; border: 1px solid #333; padding: 8px 12px; border-radius: 8px; font-size: 11px; text-decoration: none; font-weight: bold; }
-
         .menu-btn { display: block; width: 100%; max-width: 280px; padding: 18px; margin: 10px; border-radius: 12px; border: 2px solid var(--accent); background: transparent; color: white; font-weight: 900; font-size: 1.1rem; text-decoration: none; cursor: pointer; transition: 0.2s; }
         .radar-button { width: 220px; height: 220px; border-radius: 50%; border: 8px solid white; background: transparent; color: white; font-size: 1.6rem; font-weight: 900; transition: 0.3s; }
         .radar-button:disabled { opacity: 0.3; transform: scale(0.9); }
@@ -23,7 +21,7 @@
         @keyframes blink { from { opacity: 1; } to { opacity: 0.3; } }
         .tension { animation: blink 0.15s infinite alternate; }
 
-        #flash-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:9999; display:flex; align-items:center; justify-content:center; flex-direction:column; }
+        #flash-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:none; align-items:center; justify-content:center; flex-direction:column; text-align:center; }
     </style>
 </head>
 <body>
@@ -44,8 +42,8 @@
 
     <div id="screen-radar-waiting" class="screen">
         <h2 style="color:#444">ESPERANDO AL DJ...</h2>
-        <p style="font-size:0.8rem; color:#222">El radar se activará en pantalla pronto</p>
-        <button onclick="showScreen('screen-welcome')" style="color:#666; background:none; border:none; margin-top:20px;">← VOLVER</button>
+        <p style="font-size:0.8rem; color:#222">El radar se activará pronto</p>
+        <button onclick="showScreen('screen-welcome')" style="color:#666; background:none; border:none; margin-top:20px; font-weight:bold;">← VOLVER</button>
     </div>
 
     <div id="screen-radar" class="screen" style="z-index: 200; background: #000;">
@@ -57,8 +55,10 @@
         <h2 style="color:var(--dj)">MENSAJE AL DJ</h2>
         <input type="text" id="dj-input" class="input-field" placeholder="Escribe tu petición...">
         <button id="send-dj-btn" class="menu-btn" style="border-color:var(--dj); color:var(--dj)">ENVIAR</button>
-        <button onclick="showScreen('screen-welcome')" style="color:#666; background:none; border:none; margin-top:20px;">← VOLVER</button>
+        <button onclick="showScreen('screen-welcome')" style="color:#666; background:none; border:none; margin-top:20px; font-weight: bold;">← VOLVER</button>
     </div>
+
+    <div id="flash-overlay"></div>
 
     <script>
         let myId = "";
@@ -67,16 +67,16 @@
         let currentColor = "#ffffff";
         const socket = new WebSocket('wss://tapapp.onrender.com/ws');
 
-        // Variables de estado
         const body = document.body;
-        const btn = document.getElementById('radar-btn');
-        const status = document.getElementById('status-text');
+        const radarBtn = document.getElementById('radar-btn');
+        const statusTxt = document.getElementById('status-text');
+        const overlay = document.getElementById('flash-overlay');
 
         async function requestTorchPermission() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 videoTrack = stream.getVideoTracks()[0];
-            } catch (e) { console.log("Sin permiso de cámara"); }
+            } catch (e) { console.log("Cámara no disponible"); }
         }
 
         function registerUser() {
@@ -99,8 +99,8 @@
 
         const stopAllEffects = () => {
             if (flashInterval) clearInterval(flashInterval);
-            const overlay = document.getElementById('flash-overlay');
-            if (overlay) overlay.remove();
+            overlay.style.display = "none";
+            overlay.innerHTML = "";
             if (videoTrack) videoTrack.applyConstraints({ advanced: [{ torch: false }] }).catch(() => {});
         };
 
@@ -116,51 +116,37 @@
 
         socket.onmessage = async (event) => {
             const data = JSON.parse(event.data);
-            const body = document.body;
-            const btn = document.getElementById('radar-btn');
-            const status = document.getElementById('status-text');
 
-            // 1. RESET (Vuelta total al inicio)
+            // 1. RESET
             if (data.action === "reset") {
                 stopAllEffects();
                 location.reload();
                 return;
             }
 
-            // 2. LINTERNAS: INICIAR PARPADEO
+            // 2. LINTERNAS: INICIAR
             if (data.action === "start_flashing") {
                 stopAllEffects();
                 currentColor = data.color || "#ffffff";
-                const overlay = document.createElement('div');
-                overlay.id = 'flash-overlay';
-                overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:10000; display:flex; align-items:center; justify-content:center; flex-direction:column;";
-                overlay.innerHTML = `<h1 style="color:white; opacity:0.3; font-size:0.8rem; font-family:sans-serif;">MODO LINTERNA</h1>`;
-                document.body.appendChild(overlay);
+                overlay.style.display = "flex";
+                overlay.style.backgroundColor = "black";
+                overlay.innerHTML = `<h1 style="color:white; opacity:0.3; font-size:0.8rem;">MODO LINTERNA</h1>`;
 
                 flashInterval = setInterval(async () => {
                     const isBlack = overlay.style.backgroundColor === 'black' || overlay.style.backgroundColor === 'rgb(0, 0, 0)';
                     overlay.style.backgroundColor = isBlack ? currentColor : 'black';
-                    if (videoTrack) {
+                    if (videoTrack && videoTrack.readyState === 'live') {
                         try { await videoTrack.applyConstraints({ advanced: [{ torch: isBlack }] }); } catch(e){}
                     }
                 }, 120);
             }
 
-            // 3. LINTERNAS: FINAL DEL SORTEO (BLOQUEO DE PANTALLA)
+            // 3. LINTERNAS: GANADOR
             if (data.action === "light_winner_found") {
                 if (flashInterval) clearInterval(flashInterval);
-                let overlay = document.getElementById('flash-overlay');
-                if(!overlay) {
-                    overlay = document.createElement('div');
-                    overlay.id = 'flash-overlay';
-                    overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:flex; align-items:center; justify-content:center; text-align:center;";
-                    document.body.appendChild(overlay);
-                }
-                
-                overlay.style.display = "flex"; // Aseguramos que cubra todo
+                overlay.style.display = "flex";
 
                 if (data.winner_id === myId) {
-                    // GANADOR LINTERNAS
                     overlay.style.backgroundColor = data.color || "white";
                     overlay.innerHTML = `<div style="color:black; padding:20px;">
                         <h1 style="font-size:3rem; margin:0;">🏆</h1>
@@ -169,7 +155,6 @@
                     </div>`;
                     if (videoTrack) videoTrack.applyConstraints({ advanced: [{ torch: true }] }).catch(() => {});
                 } else {
-                    // PERDEDOR LINTERNAS
                     overlay.style.backgroundColor = "black";
                     overlay.innerHTML = `<h1 style="color:#222; font-size:1rem; font-weight:900;">SUERTE LA PRÓXIMA...</h1>`;
                     if (videoTrack) videoTrack.applyConstraints({ advanced: [{ torch: false }] }).catch(() => {});
@@ -181,39 +166,36 @@
                 stopAllEffects();
                 showScreen('screen-radar');
                 body.style.backgroundColor = "#000";
-                btn.disabled = true;
-                btn.innerText = "ESPERA...";
-                status.innerText = "¡PREPARADOS!";
+                radarBtn.disabled = true;
+                radarBtn.innerText = "ESPERA...";
+                statusTxt.innerText = "¡PREPARADOS!";
             }
 
-            // 5. RADAR: TENSIÓN
             if (data.action === "start_tension") {
                 body.classList.add('tension');
-                status.innerText = "¡ATENTOS!";
+                statusTxt.innerText = "¡ATENTOS!";
             }
 
-            // 6. RADAR: ¡YA!
             if (data.action === "go_pulsar") {
                 body.classList.remove('tension');
-                btn.disabled = false;
-                btn.innerText = "¡DALE YA!";
-                status.innerText = "¡PULSA!";
+                radarBtn.disabled = false;
+                radarBtn.innerText = "¡DALE YA!";
+                statusTxt.innerText = "¡PULSA!";
             }
 
-            // 7. RADAR: GANADOR POR CLICK
             if (data.action === "winner_found") {
-                btn.disabled = true;
+                radarBtn.disabled = true;
                 if (data.winner_id === myId) {
                     body.style.backgroundColor = "#2ecc71";
-                    btn.innerText = "¡GANASTE!";
+                    radarBtn.innerText = "¡GANASTE!";
                 } else {
                     body.style.backgroundColor = "#e74c3c";
-                    btn.innerText = "CASI...";
+                    radarBtn.innerText = "CASI...";
                 }
             }
         };
 
-        btn.onclick = () => {
+        radarBtn.onclick = () => {
             socket.send(JSON.stringify({ "type": "player_click", "user_id": myId }));
         };
 
