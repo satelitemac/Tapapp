@@ -24,9 +24,8 @@
         .btn-winner { background: white; color: black; border: 2px solid white; }
         .btn-reset { background: transparent; color: #e74c3c; border: 1px solid #e74c3c; margin-top: 10px; font-size: 0.7rem; padding: 10px; }
         
-        #user-list { background: #000; border-radius: 8px; padding: 10px; font-family: 'Space Mono'; font-size: 0.7rem; color: #888; max-height: 80px; overflow-y: auto; margin-top: 10px; border: 1px solid #222; word-break: break-all; }
+        #user-list { background: #000; border-radius: 8px; padding: 10px; font-family: 'Space Mono'; font-size: 0.7rem; color: #888; max-height: 120px; overflow-y: auto; margin-top: 10px; border: 1px solid #222; word-break: break-all; }
         
-        /* ESTILOS PETICIONES */
         #notes-list { height: 180px; overflow-y: auto; background: #000; border-radius: 10px; padding: 15px; font-family: 'Space Mono', monospace; font-size: 0.85rem; border: 1px solid #222; margin-top: 10px; }
         .note { border-bottom: 1px solid #111; padding: 10px 0; color: var(--dj); animation: fadeIn 0.3s; }
         .note span { color: #555; display: block; font-size: 0.7rem; margin-bottom: 4px; text-transform: uppercase; }
@@ -46,6 +45,11 @@
     <div class="grid">
         <div class="panel">
             <h2>👥 Usuarios Online: <span id="user-count" style="color:white">0</span></h2>
+            
+            <button onclick="limpiarVistaUsuarios()" style="background: transparent; color: #555; border: 1px solid #333; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.6rem; margin-bottom: 15px; font-family: 'Space Mono'; text-transform: uppercase; width: 100%;">
+                🧹 Limpiar Lista Local
+            </button>
+
             <div id="user-list">Esperando conexiones...</div>
             
             <h2 style="margin-top: 30px; color: var(--dj)">🎵 Peticiones</h2>
@@ -65,7 +69,7 @@
             </div>
         </div>
 
-       <div class="panel">
+        <div class="panel">
             <h2>🔦 Momento Linternas</h2>
             <div class="controls">
                 <div style="margin-bottom: 5px;">
@@ -84,6 +88,12 @@
         const socket = new WebSocket('wss://tapapp.onrender.com/ws');
         let savedUsers = localStorage.getItem('active_users');
         let activeUsers = new Set(savedUsers ? JSON.parse(savedUsers) : []);
+
+        function limpiarVistaUsuarios() {
+            activeUsers.clear();
+            updateUserUI();
+            console.log("🧹 Lista local limpiada");
+        }
 
         function sendAction(action) {
             const chosenColor = document.getElementById('action-color').value;
