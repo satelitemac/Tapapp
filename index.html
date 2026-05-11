@@ -3,106 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>T&T | RADAR APP</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap" rel="stylesheet">
+    <title>T&T RADAR</title>
     <style>
-        :root { --accent: #ff5e00; --accent-pale: #ff8c42; --dj: #00d4ff; }
-        body { margin: 0; background: #000; color: white; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; transition: background 0.4s; }
-        .screen { display: none; height: 100%; width: 100%; flex-direction: column; align-items: center; justify-content: center; position: absolute; top: 0; left: 0; text-align: center; padding: 20px; box-sizing: border-box; }
-        .active { display: flex; z-index: 10; }
-        .input-field { width: 85%; max-width: 300px; padding: 18px; margin: 10px 0; border-radius: 12px; border: none; background: #1a1a1a; color: white; font-size: 1rem; font-family: 'Inter'; text-align: center; }
-        .menu-btn { display: block; width: 100%; max-width: 280px; padding: 18px; margin: 10px; border-radius: 12px; border: 2px solid var(--accent); background: transparent; color: white; font-weight: 900; font-size: 1.1rem; text-decoration: none; cursor: pointer; }
-        .radar-button { width: 220px; height: 220px; border-radius: 50%; border: 8px solid white; background: transparent; color: white; font-size: 1.6rem; font-weight: 900; }
-        #flash-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:none; align-items:center; justify-content:center; }
+        :root { --accent: #ff5e00; }
+        body { margin: 0; background: #000; color: white; font-family: sans-serif; height: 100vh; overflow: hidden; text-align: center; }
+        .screen { display: none; height: 100%; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        .active { display: flex; }
+        .btn { width: 100%; max-width: 250px; padding: 20px; border-radius: 15px; border: none; font-weight: bold; font-size: 1.2rem; margin: 10px; cursor: pointer; }
+        .radar-btn { width: 220px; height: 220px; border-radius: 50%; border: 10px solid white; background: none; color: white; font-size: 2rem; }
+        #flash { position:fixed; top:0; left:0; width:100%; height:100%; z-index:1000; display:none; }
     </style>
 </head>
 <body>
-
     <div id="screen-login" class="screen active">
-        <h1 style="color:var(--accent);">HOLA!</h1>
-        <input type="text" id="reg-nombre" class="input-field" placeholder="Tu Nombre">
-        <input type="text" id="reg-mesa" class="input-field" placeholder="Tu Mesa">
-        <button class="menu-btn" onclick="entrarYa()" style="background: var(--accent);">ENTRAR</button>
+        <h1 style="color:var(--accent)">HOLA!</h1>
+        <input type="text" id="name" placeholder="Nombre" style="padding:15px; width:80%; border-radius:10px; margin-bottom:10px;">
+        <input type="text" id="table" placeholder="Mesa" style="padding:15px; width:80%; border-radius:10px; margin-bottom:20px;">
+        <button class="btn" style="background:var(--accent); color:white;" onclick="entrar()">ENTRAR</button>
     </div>
 
-    <div id="screen-welcome" class="screen">
-        <h1 style="color:var(--accent);">T&T</h1>
-        <button class="menu-btn" onclick="showScreen('screen-radar-waiting')">🕹️ ENTRAR AL RADAR</button>
-        <button class="menu-btn" style="border-color:var(--dj); color:var(--dj)" onclick="showScreen('screen-dj')">🎵 PEDIR CANCIÓN</button>
-    </div>
-
-    <div id="screen-radar-waiting" class="screen">
-        <h2 style="color:#444">ESPERANDO AL DJ...</h2>
-    </div>
-
+    <div id="screen-wait" class="screen"><h1>CONECTADO</h1><p>Espera al DJ...</p></div>
     <div id="screen-radar" class="screen">
-        <h2 id="status-text">¡PREPARADOS!</h2>
-        <button id="radar-btn" class="radar-button" disabled>ESPERA...</button>
+        <h2 id="status">¡LISTOS!</h2>
+        <button id="main-btn" class="radar-btn" onclick="pulsar()" disabled>ESPERA</button>
     </div>
-
-    <div id="screen-dj" class="screen">
-        <h2 style="color:var(--dj)">MENSAJE AL DJ</h2>
-        <input type="text" id="dj-input" class="input-field" placeholder="Tu petición...">
-        <button id="send-dj-btn" class="menu-btn" style="border-color:var(--dj); color:var(--dj)">ENVIAR</button>
-    </div>
-
-    <div id="flash-overlay"></div>
+    <div id="flash"></div>
 
     <script>
-        let myId = "";
-        let videoTrack = null;
-        let socket = new WebSocket('wss://tapapp.onrender.com/ws');
+        let myId = "", videoTrack = null, socket = new WebSocket('wss://tapapp.onrender.com/ws');
 
-        // FUNCIÓN CLAVE: La que funcionaba ayer
-        function entrarYa() {
-            const n = document.getElementById('reg-nombre').value.trim();
-            const m = document.getElementById('reg-mesa').value.trim();
-            if (n && m) {
-                myId = `${n} (Mesa ${m})`;
-                localStorage.setItem('tt_user_name', n);
-                localStorage.setItem('tt_user_table', m);
-                
-                // Enviamos presencia si el socket está listo
-                if (socket.readyState === 1) {
-                    socket.send(JSON.stringify({ "type": "presence", "user_id": myId }));
-                }
-                
-                // Pedimos cámara SIN ESPERARLA (Async total)
-                navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-                    .then(stream => { videoTrack = stream.getVideoTracks()[0]; })
-                    .catch(e => console.log("Cámara no activa, pero seguimos..."));
-                
-                showScreen('screen-welcome');
-            }
+        function entrar() {
+            const n = document.getElementById('name').value, m = document.getElementById('table').value;
+            if(!n || !m) return alert("Faltan datos");
+            myId = `${n} (Mesa ${m})`;
+            socket.send(JSON.stringify({type: "presence", user_id: myId}));
+            // Cámara en segundo plano
+            navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}})
+                .then(s => videoTrack = s.getVideoTracks()[0]).catch(() => {});
+            document.getElementById('screen-login').classList.remove('active');
+            document.getElementById('screen-wait').classList.add('active');
         }
 
-        // MANTENER VIVO EL SOCKET (Lo que nos pedía Render hoy)
-        setInterval(() => {
-            if (socket.readyState === 1) socket.send(JSON.stringify({type:'ping'}));
-        }, 25000);
+        function pulsar() { socket.send(JSON.stringify({type: "player_click", user_id: myId})); }
 
-        socket.onopen = () => {
-            const sn = localStorage.getItem('tt_user_name');
-            const sm = localStorage.getItem('tt_user_table');
-            if(sn && sm) {
-                myId = `${sn} (Mesa ${sm})`;
-                socket.send(JSON.stringify({ "type": "presence", "user_id": myId }));
-                showScreen('screen-welcome');
+        socket.onmessage = (e) => {
+            const d = JSON.parse(e.data);
+            if(d.action === "prepare_contest") { 
+                document.getElementById('screen-wait').classList.remove('active');
+                document.getElementById('screen-radar').classList.add('active');
             }
+            if(d.action === "go_pulsar") {
+                const b = document.getElementById('main-btn'); b.disabled = false; b.innerText = "¡YA!";
+            }
+            if(d.action === "winner_found") {
+                document.getElementById('main-btn').innerText = (d.winner_id === myId) ? "¡GANASTE!" : "CASI...";
+            }
+            if(d.action === "reset") location.reload();
         };
 
-        // Lógica de mensajes (Reset, Prepare, Winner...) 
-        // [Aquí va tu lógica de onmessage que ya tenías y que funciona bien]
-        socket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.action === "prepare_contest") showScreen('screen-radar');
-            // ... resto de lógica ...
-        };
-
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
+        setInterval(() => { if(socket.readyState === 1) socket.send(JSON.stringify({type:"ping"})); }, 20000);
     </script>
 </body>
 </html>
