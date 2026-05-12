@@ -4,269 +4,209 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>T&T | EVENT</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800;900&display=swap" rel="stylesheet">
     <style>
-    :root { --accent: #ff5e00; --tech-gray: #2a2a2a; }
-    body { margin: 0; background: #000; color: white; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
-    
-    .screen { display: none; height: 100%; width: 100%; flex-direction: column; align-items: center; justify-content: center; position: absolute; text-align: center; padding: 20px; box-sizing: border-box; }
-    .active { display: flex; z-index: 10; }
-    
-    /* BOTÓN RADAR (Mantenido) */
-    .radar-btn { width: 220px; height: 220px; border-radius: 50%; border: 10px solid white; background: none; color: white; font-size: 1.8rem; font-weight: 900; transition: all 0.2s; }
-    .radar-btn:active { transform: scale(0.9); }
-    
-    /* LINTERNAS */
-    #flash-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:none; pointer-events: none; }
+        :root { --accent: #ff5e00; --tech-gray: #2a2a2a; }
+        body { margin: 0; background: #000; color: white; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
+        
+        .screen { display: none; height: 100%; width: 100%; flex-direction: column; align-items: center; justify-content: center; position: absolute; text-align: center; padding: 20px; box-sizing: border-box; }
+        .active { display: flex; z-index: 10; }
 
-    /* --- NUEVO: CONTENEDOR NOW PLAYING (Estilo Cristal) --- */
-    #now-playing-container {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 20px;
-        padding: 15px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.6);
-        margin-bottom: 20px;
-        transition: all 0.5s ease;
-    }
+        /* --- BOTÓN DE LOGUEO (Naranja y Grande) --- */
+        .btn-login { 
+            width: 100%; max-width: 280px; padding: 20px; border-radius: 12px; 
+            border: none; background: var(--accent); color: white; 
+            font-weight: 900; font-size: 1.2rem; cursor: pointer;
+            text-transform: uppercase; margin-top: 10px;
+        }
 
-    /* --- NUEVO: BOTÓN TECHNICS MKII --- */
-    .technics-start-stop {
-        width: 100%;
-        max-width: 280px;
-        margin-top: 15px;
-        padding: 18px;
-        background: var(--tech-gray); 
-        color: #e0e0e0;
-        border: none;
-        border-radius: 4px; /* Esquinas casi rectas como el plato original */
-        font-family: 'Inter', sans-serif;
-        font-weight: 800;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        cursor: pointer;
-        transition: all 0.1s ease;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        /* El relieve mecánico del botón */
-        box-shadow: 
-            inset 1px 1px 2px rgba(255,255,255,0.1),
-            inset -1px -1px 2px rgba(0,0,0,0.5),
-            0px 4px 0px #111,
-            0px 8px 15px rgba(0,0,0,0.6);
-    }
+        /* --- BOTÓN TECHNICS MKII (Para el Chat) --- */
+        .technics-btn {
+            width: 100%; max-width: 280px; margin-top: 15px; padding: 18px;
+            background: var(--tech-gray); color: #e0e0e0;
+            border: none; border-radius: 4px; 
+            font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.85rem;
+            text-transform: uppercase; letter-spacing: 2px;
+            cursor: pointer; transition: all 0.1s ease;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 
+                inset 1px 1px 2px rgba(255,255,255,0.1),
+                inset -1px -1px 2px rgba(0,0,0,0.5),
+                0px 5px 0px #111,
+                0px 8px 15px rgba(0,0,0,0.6);
+        }
+        .technics-btn:active {
+            transform: translateY(3px);
+            box-shadow: inset 1px 1px 5px rgba(0,0,0,0.8), 0px 2px 0px #111;
+            color: #00d4ff;
+        }
+        .technics-label { font-size: 0.5rem; margin-top: 4px; opacity: 0.5; letter-spacing: 4px; font-weight: 400; }
 
-    .technics-start-stop:active {
-        transform: translateY(3px);
-        box-shadow: inset 1px 1px 5px rgba(0,0,0,0.8), 0px 1px 0px #111;
-        color: #00d4ff;
-    }
+        /* OTROS ESTILOS */
+        .input-field { width: 100%; max-width: 280px; padding: 18px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #111; color: white; text-align: center; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        
+        #now-playing-container { 
+            background: rgba(255,255,255,0.03); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 15px; 
+            margin-bottom: 20px; width: 85%; max-width: 280px; 
+        }
 
-    .technics-label {
-        font-size: 0.5rem;
-        margin-top: 4px;
-        opacity: 0.5;
-        letter-spacing: 4px;
-        font-weight: 400;
-    }
-
-    /* INPUT DE TEXTO */
-    .input-field { 
-        width: 100%; max-width: 280px; padding: 18px; margin: 10px 0; border-radius: 10px; 
-        border: 1px solid #333; background: #0a0a0a; color: white; text-align: center; font-size: 1rem; 
-        box-sizing: border-box;
-    }
-</style>
+        .radar-btn { width: 220px; height: 220px; border-radius: 50%; border: 10px solid white; background: none; color: white; font-size: 1.8rem; font-weight: 900; }
+        #flash-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:none; pointer-events: none; }
+    </style>
 </head>
 <body>
     <div id="flash-overlay"></div>
 
     <div id="sc-login" class="screen active">
-        <h1 style="color:var(--accent)">HOLA!</h1>
+        <h1 style="color:var(--accent); font-weight: 900; letter-spacing: -2px;">HOLA!</h1>
         <input type="text" id="n" class="input-field" placeholder="Nombre">
         <input type="text" id="m" class="input-field" placeholder="Mesa">
-        <button class="btn-main" onclick="init()">ENTRAR</button>
+        <button class="btn-login" onclick="init()">ENTRAR</button>
     </div>
 
     <div id="sc-wait" class="screen">
-    <h1 id="wait-msg">CONECTADO</h1>
-    <p style="margin-bottom: 15px; opacity: 0.7;">Mantén esta pestaña abierta...</p>
+        <h1 id="wait-msg" style="font-size: 1rem; opacity: 0.5;">CONECTADO</h1>
+        
+        <div id="now-playing-container" style="display: none;">
+            <p id="np-artist" style="color: var(--accent); font-weight: 900; margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px;"></p>
+            <p id="np-track" style="color: white; font-weight: 800; margin: 5px 0 15px 0; font-size: 1.1rem; text-transform: uppercase; line-height: 1.2;"></p>
+            <div style="position: relative; width: 100%; aspect-ratio: 1/1; overflow: hidden; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <img id="now-playing-img" src="" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+        </div>
 
-    <div id="now-playing-container" style="display: none; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); width: 85%; max-width: 280px; margin: 0 auto;">
-        <p id="np-artist" style="color: #ff5e00; font-weight: 900; margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px;"></p>
-        <p id="np-track" style="color: white; font-weight: 800; margin: 5px 0 15px 0; font-size: 1.1rem; text-transform: uppercase; line-height: 1.2;"></p>
-        <div style="position: relative; width: 100%; aspect-ratio: 1/1; overflow: hidden; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-            <img id="now-playing-img" src="" style="width: 100%; height: 100%; object-fit: cover;">
+        <div style="margin-top: 20px; width: 100%; max-width: 280px;">
+            <input type="text" id="msg-dj" class="input-field" placeholder="¿Alguna petición?">
+            <button class="technics-btn" onclick="sendDJ(event)">
+                <span id="btn-dj-text">ENVIAR AL DJ</span>
+                <span class="technics-label">START · STOP</span>
+            </button>
         </div>
     </div>
-
-    <div style="margin-top: 30px; width: 100%; max-width: 300px;">
-        <input type="text" id="msg-dj" placeholder="¿Alguna petición?" 
-               style="width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #333; background: #111; color: white; box-sizing: border-box; text-align: center;">
-        <button onclick="sendDJ(event)" 
-                style="width: 100%; margin-top: 10px; padding: 15px; border-radius: 10px; border: none; background: #00d4ff; color: black; font-weight: 900; text-transform: uppercase;">
-            ENVIAR AL DJ
-        </button>
-    </div>
-</div>
 
     <div id="sc-radar" class="screen">
         <button id="btn-p" class="radar-btn" onclick="pulsar()">ESPERA</button>
     </div>
 
     <script>
-    // 1. Recuperamos el ID si existe de una sesión anterior
-    let myId = localStorage.getItem("tt_user_id") || ""; 
-    let socket = new WebSocket('wss://tapapp.onrender.com/ws');
-    let videoTrack = null, flashInt = null, wakeLock = null;
+        let myId = localStorage.getItem("tt_user_id") || ""; 
+        let socket = new WebSocket('wss://tapapp.onrender.com/ws');
+        let videoTrack = null, flashInt = null, wakeLock = null;
 
-    // 2. Control de pantalla al iniciar
-    window.onload = () => {
-        if (myId) {
+        window.onload = () => {
+            if (myId) { showScreen('sc-wait'); setupHardware(); } 
+            else { showScreen('sc-login'); }
+        };
+
+        socket.onopen = () => {
+            if (myId) socket.send(JSON.stringify({type:"presence", user_id: myId}));
+        };
+
+        async function init() {
+            const name = document.getElementById('n').value;
+            const mesa = document.getElementById('m').value;
+            if(!name || !mesa) return;
+            myId = `${name} (Mesa ${mesa})`;
+            localStorage.setItem("tt_user_id", myId);
             showScreen('sc-wait');
             setupHardware();
-        } else {
-            showScreen('sc-login');
+            if(socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({type:"presence", user_id: myId}));
         }
-    };
 
-    // 3. Envío de presencia en cuanto el socket abre (vital para reconexiones por refresco)
-    socket.onopen = () => {
-        if (myId) socket.send(JSON.stringify({type:"presence", user_id: myId}));
-    };
-
-    // 4. Función de primer login
-    async function init() {
-        const name = document.getElementById('n').value;
-        const mesa = document.getElementById('m').value;
-        if(!name || !mesa) return;
-        
-        myId = `${name} (Mesa ${mesa})`;
-        localStorage.setItem("tt_user_id", myId); // Guardamos para el futuro
-        
-        showScreen('sc-wait');
-        setupHardware();
-        
-        if(socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify({type:"presence", user_id: myId}));
+        async function setupHardware() {
+            if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
+            try {
+                const s = await navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}});
+                videoTrack = s.getVideoTracks()[0];
+            } catch(e) { console.log("Sin linterna física"); }
         }
-    }
 
-    // 5. Separamos el hardware para poder llamarlo con o sin login manual
-    async function setupHardware() {
-        if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
-        try {
-            const s = await navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}});
-            videoTrack = s.getVideoTracks()[0];
-        } catch(e) { console.log("Sin linterna física"); }
-    }
+        function pulsar() { socket.send(JSON.stringify({type:"player_click", user_id: myId})); }
 
-    function pulsar() { 
-        socket.send(JSON.stringify({type:"player_click", user_id: myId})); 
-    }
+        socket.onmessage = async (e) => {
+            const data = JSON.parse(e.data);
+            const overlay = document.getElementById('flash-overlay');
 
-    socket.onmessage = async (e) => {
-        const data = JSON.parse(e.data);
-        console.log("📥 MENSAJE RECIBIDO:", data); // <--- AÑADE ESTO AQUÍ
-        
-        const overlay = document.getElementById('flash-overlay');
-
-        // --- 1. ACTUALIZACIÓN DE PORTADA (Viene de Streamlit) ---
-        if(data.action === "update_cover") {
-            const container = document.getElementById('now-playing-container');
-            if(data.url && data.url !== "") {
-                document.getElementById('now-playing-img').src = data.url;
-                document.getElementById('np-artist').innerText = data.artist || "ARTISTA DESCONOCIDO";
-                document.getElementById('np-track').innerText = data.track || "PISTA DESCONOCIDA";
-                container.style.display = "block";
-            } else {
-                container.style.display = "none";
+            if(data.action === "update_cover") {
+                const container = document.getElementById('now-playing-container');
+                if(data.url && data.url !== "") {
+                    document.getElementById('now-playing-img').src = data.url;
+                    document.getElementById('np-artist').innerText = data.artist || "ARTISTA";
+                    document.getElementById('np-track').innerText = data.track || "PISTA";
+                    container.style.display = "block";
+                } else { container.style.display = "none"; }
             }
+
+            if(data.action === "prepare_contest") {
+                showScreen('sc-radar');
+                const btn = document.getElementById('btn-p');
+                btn.disabled = true; btn.innerText = "ESPERA";
+                document.body.style.backgroundColor = "#000";
+            }
+            
+            if(data.action === "go_pulsar") {
+                const btn = document.getElementById('btn-p');
+                btn.disabled = false; btn.innerText = "¡DALE!";
+            }
+
+            if(data.action === "winner_found") {
+                const win = data.winner_id === myId;
+                document.getElementById('btn-p').innerText = win ? "¡GANASTE!" : "CASI...";
+                document.body.style.backgroundColor = win ? "#2ecc71" : "#8b0000";
+            }
+
+            if(data.action === "start_flashing") {
+                overlay.style.display = "block";
+                clearInterval(flashInt);
+                flashInt = setInterval(async () => {
+                    const isBlack = overlay.style.backgroundColor === 'black' || overlay.style.backgroundColor === '';
+                    overlay.style.backgroundColor = isBlack ? (data.color || "#ffffff") : 'black';
+                    if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isBlack}]}).catch(()=>{});
+                }, 130);
+            }
+
+            if(data.action === "stop_flashing") {
+                clearInterval(flashInt);
+                const isWinner = data.force_winner === myId;
+                overlay.style.backgroundColor = isWinner ? (data.color || "#ffffff") : "black";
+                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isWinner}]}).catch(()=>{});
+            }
+
+            if(data.action === "reset") {
+                clearInterval(flashInt);
+                overlay.style.display = "none";
+                document.body.style.backgroundColor = "#000";
+                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
+                showScreen('sc-wait');
+            }
+
+            if(data.action === "hard_reset") {
+                localStorage.removeItem("tt_user_id");
+                location.reload();
+            }
+        };
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
         }
 
-        // --- 2. LÓGICA DE CONCURSOS ---
-        if(data.action === "prepare_contest") {
-            showScreen('sc-radar');
-            const btn = document.getElementById('btn-p');
-            btn.disabled = true; btn.innerText = "ESPERA";
-            document.body.style.backgroundColor = "#000";
-        }
-        
-        if(data.action === "go_pulsar") {
-            const btn = document.getElementById('btn-p');
-            btn.disabled = false; btn.innerText = "¡DALE!";
-        }
+        setInterval(() => { if(socket.readyState === 1) socket.send(JSON.stringify({type:"ping"})); }, 20000);
 
-        if(data.action === "winner_found") {
-            const win = data.winner_id === myId;
-            document.getElementById('btn-p').innerText = win ? "¡GANASTE!" : "CASI...";
-            document.body.style.backgroundColor = win ? "#2ecc71" : "#8b0000";
+        function sendDJ(event) {
+            const input = document.getElementById('msg-dj');
+            const txt = input.value.trim();
+            if(!txt) return;
+            
+            socket.send(JSON.stringify({type: "chat", user_id: myId, text: txt }));
+            
+            input.value = "";
+            const btnText = document.getElementById('btn-dj-text');
+            const original = btnText.innerText;
+            btnText.innerText = "¡ENVIADO!";
+            setTimeout(() => { btnText.innerText = original; }, 2000);
         }
-
-        if(data.action === "start_flashing") {
-            overlay.style.display = "block";
-            clearInterval(flashInt);
-            flashInt = setInterval(async () => {
-                const isBlack = overlay.style.backgroundColor === 'black' || overlay.style.backgroundColor === '';
-                overlay.style.backgroundColor = isBlack ? (data.color || "#ffffff") : 'black';
-                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isBlack}]}).catch(()=>{});
-            }, 130);
-        }
-
-        if(data.action === "stop_flashing") {
-            clearInterval(flashInt);
-            const isWinner = data.force_winner === myId;
-            overlay.style.backgroundColor = isWinner ? (data.color || "#ffffff") : "black";
-            if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isWinner}]}).catch(()=>{});
-        }
-
-        if(data.action === "reset") {
-            clearInterval(flashInt);
-            overlay.style.display = "none";
-            document.body.style.backgroundColor = "#000";
-            if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
-            showScreen('sc-wait');
-        }
-
-        // --- 3. LIMPIEZA TOTAL (Para el final de la noche) ---
-        if(data.action === "hard_reset") {
-            localStorage.removeItem("tt_user_id");
-            location.reload();
-        }
-    };
-
-    function showScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-    }
-
-    setInterval(() => { if(socket.readyState === 1) socket.send(JSON.stringify({type:"ping"})); }, 20000);
-    function sendDJ(event) {
-        const input = document.getElementById('msg-dj');
-        const txt = input.value.trim();
-        if(!txt) return;
-        
-        socket.send(JSON.stringify({
-            type: "chat", 
-            user_id: myId, 
-            text: txt 
-        }));
-        
-        input.value = "";
-        const btn = event.target;
-        const originalText = btn.innerText;
-        btn.innerText = "¡ENVIADO!";
-        btn.style.background = "#2ecc71";
-        setTimeout(() => {
-            btn.innerText = originalText;
-            btn.style.background = "#00d4ff";
-        }, 2000);
-    }
-</script>
+    </script>
 </body>
 </html>
