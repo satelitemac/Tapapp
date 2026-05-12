@@ -21,9 +21,13 @@ async def websocket_endpoint(websocket: WebSocket):
             message = json.loads(data)
             
             u_id = message.get("user_id")
-            if u_id and u_id != "ADMIN_PANEL":
+            
+            # Si hay un ID nuevo (y no es el Admin), lo registramos y AVISAMOS
+            if u_id and u_id != "ADMIN_PANEL" and current_id is None:
                 current_id = u_id
                 active_users[u_id] = websocket
+                # Avisamos a todos de la nueva lista real
+                await broadcast({"action": "update_users", "users": list(active_users.keys())})
 
             if message.get("type") == "ping": continue
 
@@ -42,8 +46,11 @@ async def websocket_endpoint(websocket: WebSocket):
                 await broadcast(message)
 
     except WebSocketDisconnect:
+        # Si la conexión se cae, lo borramos y AVISAMOS
         if current_id in active_users:
             del active_users[current_id]
+            # Enviar la lista actualizada sin el usuario caído
+            await broadcast({"action": "update_users", "users": list(active_users.keys())})
 
 async def broadcast(message: dict):
     msg_str = json.dumps(message)
