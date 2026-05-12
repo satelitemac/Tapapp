@@ -106,6 +106,20 @@
         const data = JSON.parse(e.data);
         const overlay = document.getElementById('flash-overlay');
 
+        // --- 1. ACTUALIZACIÓN DE PORTADA (Viene de Streamlit) ---
+        if(data.action === "update_cover") {
+            const container = document.getElementById('now-playing-container');
+            if(data.url && data.url !== "") {
+                document.getElementById('now-playing-img').src = data.url;
+                document.getElementById('np-artist').innerText = data.artist || "ARTISTA DESCONOCIDO";
+                document.getElementById('np-track').innerText = data.track || "PISTA DESCONOCIDA";
+                container.style.display = "block";
+            } else {
+                container.style.display = "none";
+            }
+        }
+
+        // --- 2. LÓGICA DE CONCURSOS ---
         if(data.action === "prepare_contest") {
             showScreen('sc-radar');
             const btn = document.getElementById('btn-p');
@@ -139,16 +153,20 @@
             const isWinner = data.force_winner === myId;
             overlay.style.backgroundColor = isWinner ? (data.color || "#ffffff") : "black";
             if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isWinner}]}).catch(()=>{});
-            // ELIMINADO EL SETTIMEOUT DE 5 SEGUNDOS AQUÍ
         }
 
         if(data.action === "reset") {
             clearInterval(flashInt);
             overlay.style.display = "none";
             document.body.style.backgroundColor = "#000";
-            // AÑADIDO APAGADO DE LINTERNA AQUÍ
             if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
             showScreen('sc-wait');
+        }
+
+        // --- 3. LIMPIEZA TOTAL (Para el final de la noche) ---
+        if(data.action === "hard_reset") {
+            localStorage.removeItem("tt_user_id");
+            location.reload();
         }
     };
 
