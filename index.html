@@ -104,6 +104,8 @@
 
     socket.onmessage = async (e) => {
         const data = JSON.parse(e.data);
+        console.log("📥 MENSAJE RECIBIDO:", data); // <--- AÑADE ESTO AQUÍ
+        
         const overlay = document.getElementById('flash-overlay');
 
         // --- 1. ACTUALIZACIÓN DE PORTADA (Viene de Streamlit) ---
