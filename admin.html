@@ -10,7 +10,7 @@
         body { margin: 0; background: var(--bg); color: white; font-family: 'Inter', sans-serif; padding: 20px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1000px; margin: 0 auto; }
         .panel { background: var(--panel); border-radius: 16px; padding: 25px; border: 1px solid #222; }
-        h2 { color: var(--accent); font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; }
+        h2 { color: var(--accent); font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;}
         .controls { display: flex; flex-direction: column; gap: 12px; }
         .btn { padding: 18px; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; text-transform: uppercase; transition: all 0.2s; font-family: 'Inter'; }
         .btn-prep { background: #444; color: white; }
@@ -18,8 +18,10 @@
         .btn-flash { background: var(--light); color: black; }
         .btn-winner { background: white; color: black; }
         .btn-reset { background: transparent; color: #e74c3c; border: 1px solid #e74c3c; margin-top: 10px; font-size: 0.8rem; }
+        .btn-nuke { background: #8b0000; color: white; padding: 5px 10px; font-size: 0.7rem; border-radius: 5px; border: none; cursor: pointer; }
         #user-list { background: #000; border-radius: 8px; padding: 10px; font-family: 'Space Mono'; font-size: 0.75rem; color: #888; height: 100px; overflow-y: auto; border: 1px solid #222; }
         #ganador-actual { background: #000; border-radius: 10px; padding: 15px; margin-top: 10px; text-align: center; color: #2ecc71; font-weight: 900; border: 2px dashed #333; }
+        #chat-box { height: 150px; overflow-y: auto; background: #000; padding: 15px; font-family: 'Space Mono', monospace; font-size: 0.85rem; border: 1px solid #333; border-radius: 8px; display: flex; flex-direction: column-reverse; }
     </style>
 </head>
 <body>
@@ -28,7 +30,10 @@
 
     <div class="grid">
         <div class="panel">
-            <h2>👥 ONLINE: <span id="user-count">0</span></h2>
+            <h2>
+                <span>👥 ONLINE: <span id="user-count">0</span></span>
+                <button class="btn-nuke" onclick="if(confirm('¿Borrar memoria de todos los móviles y forzar recarga?')) sendAction('hard_reset')">☢️ LIMPIAR SESIONES</button>
+            </h2>
             <div id="user-list">Esperando conexiones...</div>
             <div id="ganador-actual">ESPERANDO...</div>
         </div>
@@ -50,6 +55,11 @@
                 <button class="btn btn-winner" onclick="sendAction('stop_flashing')">🌟 ELEGIR GANADOR</button>
             </div>
         </div>
+
+        <div class="panel" style="grid-column: span 2;">
+            <h2>🎧 HEY DJ! (PETICIONES)</h2>
+            <div id="chat-box"></div>
+        </div>
     </div>
 
     <script>
@@ -65,7 +75,6 @@
                 "user_id": "ADMIN_PANEL" 
             };
 
-            // Si es elegir ganador de luz, seleccionamos uno de la lista
             if (action === "stop_flashing") {
                 const usersArr = Array.from(activeUsers);
                 if (usersArr.length > 0) {
@@ -81,13 +90,11 @@
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
 
-            // NUEVA LÓGICA: Sincronizar la lista exacta que manda el servidor
             if (data.action === "update_users") {
                 activeUsers = new Set(data.users);
                 updateUI();
             }
 
-            // Mostrar ganadores en el panel
             if (data.action === "winner_found" || data.action === "light_winner_found" || (data.action === "stop_flashing" && data.force_winner)) {
                 const winnerName = data.winner_id || data.force_winner;
                 document.getElementById('ganador-actual').innerText = "🏆 " + winnerName;
@@ -95,6 +102,17 @@
 
             if (data.action === "reset") {
                 document.getElementById('ganador-actual').innerText = "ESPERANDO...";
+            }
+
+            // RECIBIR CHAT DEL PÚBLICO
+            if (data.type === "chat") {
+                const box = document.getElementById('chat-box');
+                const msg = document.createElement('div');
+                msg.style.padding = "8px 0";
+                msg.style.borderBottom = "1px solid #222";
+                msg.innerHTML = `<span style="color: var(--accent); font-weight: bold;">${data.user_id}:</span> 
+                                 <span style="color: #00d4ff;">${data.text}</span>`;
+                box.prepend(msg); 
             }
         };
 

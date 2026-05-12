@@ -30,6 +30,15 @@
     <div id="sc-wait" class="screen">
         <h1 id="wait-msg">CONECTADO</h1>
         <p>Mantén esta pestaña abierta...</p>
+
+        <div style="margin-top: 30px; width: 100%; max-width: 300px;">
+            <input type="text" id="msg-dj" placeholder="¿Alguna petición?" 
+                   style="width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #333; background: #111; color: white; box-sizing: border-box; text-align: center; font-family: 'Inter', sans-serif;">
+            <button onclick="sendDJ(event)" 
+                    style="width: 100%; margin-top: 10px; padding: 15px; border-radius: 10px; border: none; background: #00d4ff; color: black; font-weight: 900; cursor: pointer; text-transform: uppercase;">
+                ENVIAR AL DJ
+            </button>
+        </div>
     </div>
 
     <div id="sc-radar" class="screen">
@@ -143,6 +152,27 @@
     }
 
     setInterval(() => { if(socket.readyState === 1) socket.send(JSON.stringify({type:"ping"})); }, 20000);
+    function sendDJ(event) {
+        const input = document.getElementById('msg-dj');
+        const txt = input.value.trim();
+        if(!txt) return;
+        
+        socket.send(JSON.stringify({
+            type: "chat", 
+            user_id: myId, 
+            text: txt 
+        }));
+        
+        input.value = "";
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = "¡ENVIADO!";
+        btn.style.background = "#2ecc71";
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.style.background = "#00d4ff";
+        }, 2000);
+    }
 </script>
 </body>
 </html>
