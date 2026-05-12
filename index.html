@@ -6,16 +6,82 @@
     <title>T&T | EVENT</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap" rel="stylesheet">
     <style>
-        :root { --accent: #ff5e00; }
-        body { margin: 0; background: #000; color: white; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
-        .screen { display: none; height: 100%; width: 100%; flex-direction: column; align-items: center; justify-content: center; position: absolute; text-align: center; padding: 20px; box-sizing: border-box; }
-        .active { display: flex; z-index: 10; }
-        .btn-main { width: 100%; max-width: 280px; padding: 20px; border-radius: 15px; border: none; background: var(--accent); color: white; font-weight: 900; font-size: 1.2rem; }
-        .radar-btn { width: 220px; height: 220px; border-radius: 50%; border: 10px solid white; background: none; color: white; font-size: 1.8rem; font-weight: 900; transition: all 0.2s; }
-        .radar-btn:active { transform: scale(0.9); }
-        #flash-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:none; pointer-events: none; }
-        .input-field { width: 85%; max-width: 300px; padding: 18px; margin: 10px 0; border-radius: 12px; border: none; background: #1a1a1a; color: white; text-align: center; font-size: 1rem; }
-    </style>
+    :root { --accent: #ff5e00; --tech-gray: #2a2a2a; }
+    body { margin: 0; background: #000; color: white; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
+    
+    .screen { display: none; height: 100%; width: 100%; flex-direction: column; align-items: center; justify-content: center; position: absolute; text-align: center; padding: 20px; box-sizing: border-box; }
+    .active { display: flex; z-index: 10; }
+    
+    /* BOTÓN RADAR (Mantenido) */
+    .radar-btn { width: 220px; height: 220px; border-radius: 50%; border: 10px solid white; background: none; color: white; font-size: 1.8rem; font-weight: 900; transition: all 0.2s; }
+    .radar-btn:active { transform: scale(0.9); }
+    
+    /* LINTERNAS */
+    #flash-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:none; pointer-events: none; }
+
+    /* --- NUEVO: CONTENEDOR NOW PLAYING (Estilo Cristal) --- */
+    #now-playing-container {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 15px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+        margin-bottom: 20px;
+        transition: all 0.5s ease;
+    }
+
+    /* --- NUEVO: BOTÓN TECHNICS MKII --- */
+    .technics-start-stop {
+        width: 100%;
+        max-width: 280px;
+        margin-top: 15px;
+        padding: 18px;
+        background: var(--tech-gray); 
+        color: #e0e0e0;
+        border: none;
+        border-radius: 4px; /* Esquinas casi rectas como el plato original */
+        font-family: 'Inter', sans-serif;
+        font-weight: 800;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        cursor: pointer;
+        transition: all 0.1s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        /* El relieve mecánico del botón */
+        box-shadow: 
+            inset 1px 1px 2px rgba(255,255,255,0.1),
+            inset -1px -1px 2px rgba(0,0,0,0.5),
+            0px 4px 0px #111,
+            0px 8px 15px rgba(0,0,0,0.6);
+    }
+
+    .technics-start-stop:active {
+        transform: translateY(3px);
+        box-shadow: inset 1px 1px 5px rgba(0,0,0,0.8), 0px 1px 0px #111;
+        color: #00d4ff;
+    }
+
+    .technics-label {
+        font-size: 0.5rem;
+        margin-top: 4px;
+        opacity: 0.5;
+        letter-spacing: 4px;
+        font-weight: 400;
+    }
+
+    /* INPUT DE TEXTO */
+    .input-field { 
+        width: 100%; max-width: 280px; padding: 18px; margin: 10px 0; border-radius: 10px; 
+        border: 1px solid #333; background: #0a0a0a; color: white; text-align: center; font-size: 1rem; 
+        box-sizing: border-box;
+    }
+</style>
 </head>
 <body>
     <div id="flash-overlay"></div>
