@@ -1,4 +1,5 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel  # <--- NUEVA IMPORTACIÓN AQUÍ
 import json
 
 app = FastAPI()
@@ -7,6 +8,24 @@ all_connections = set()
 # Guardamos nombre -> socket solo para la lógica de juego
 active_users = {} 
 winner_id = None
+
+# ---> INICIO NUEVO BLOQUE PARA RECIBIR LA PORTADA DESDE STREAMLIT <---
+class CoverData(BaseModel):
+    url: str
+    artist: str = ""
+    track: str = ""
+
+@app.post("/update_cover")
+async def post_cover(data: CoverData):
+    # Cuando Streamlit mande la info, se la pasamos a todos los móviles
+    await broadcast({
+        "action": "update_cover", 
+        "url": data.url, 
+        "artist": data.artist, 
+        "track": data.track
+    })
+    return {"status": "ok"}
+# ---> FIN NUEVO BLOQUE PARA LA PORTADA <---
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -41,7 +60,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     winner_id = None
                 await broadcast(message)
                 
-            # ---> EL PUENTE PARA EL CHAT <---
+            # EL PUENTE PARA EL CHAT
             elif message.get("type") == "chat":
                 await broadcast(message)
 

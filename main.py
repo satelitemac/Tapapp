@@ -141,6 +141,23 @@ def cloud_watcher():
             st.session_state.last_d = new_d
             st.session_state.last_p = new_p
             st.session_state.mostrar_letras = False 
+            
+            # ---> EL CHIVATAZO AL SERVIDOR (AQUÍ ENVIAMOS A LOS MÓVILES) <---
+            try:
+                artistas_nombres = " & ".join([a['name'] for a in new_d['nodos_artistas']])
+                titulo = new_d['son']['name']
+                bgs = new_d['nodos_artistas'][0].get('backgrounds', []) if new_d['nodos_artistas'] else []
+                imagen = new_d['r'].get('foto') or (bgs[0] if bgs else VINILO_FALLBACK)
+                
+                requests.post("https://tapapp.onrender.com/update_cover", json={
+                    "url": imagen,
+                    "artist": artistas_nombres,
+                    "track": titulo
+                }, timeout=2)
+            except Exception as e:
+                print("Error avisando a Render:", e)
+            # ---> FIN DEL CHIVATAZO <---
+
             st.rerun() 
 
 cloud_watcher()
