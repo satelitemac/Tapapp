@@ -81,9 +81,9 @@
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
 
-            // Registrar usuarios que no sean el Admin
-            if (data.user_id && data.user_id !== "ADMIN_PANEL") {
-                activeUsers.add(data.user_id);
+            // NUEVA LÓGICA: Sincronizar la lista exacta que manda el servidor
+            if (data.action === "update_users") {
+                activeUsers = new Set(data.users);
                 updateUI();
             }
 
