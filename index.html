@@ -37,87 +37,114 @@
     </div>
 
     <script>
-        let myId = "", socket = new WebSocket('wss://tapapp.onrender.com/ws');
-        let videoTrack = null, flashInt = null, wakeLock = null;
+    // 1. Recuperamos el ID si existe de una sesión anterior
+    let myId = localStorage.getItem("tt_user_id") || ""; 
+    let socket = new WebSocket('wss://tapapp.onrender.com/ws');
+    let videoTrack = null, flashInt = null, wakeLock = null;
 
-        async function init() {
-            const name = document.getElementById('n').value, mesa = document.getElementById('m').value;
-            if(!name || !mesa) return;
-            myId = `${name} (Mesa ${mesa})`;
-            
-            // 1. Bloqueo de sueño
-            if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
-            
-            // 2. Permiso de cámara para linterna
-            try {
-                const s = await navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}});
-                videoTrack = s.getVideoTracks()[0];
-            } catch(e) { console.log("Sin linterna física"); }
+    // 2. Control de pantalla al iniciar
+    window.onload = () => {
+        if (myId) {
+            showScreen('sc-wait');
+            setupHardware();
+        } else {
+            showScreen('sc-login');
+        }
+    };
 
+    // 3. Envío de presencia en cuanto el socket abre (vital para reconexiones por refresco)
+    socket.onopen = () => {
+        if (myId) socket.send(JSON.stringify({type:"presence", user_id: myId}));
+    };
+
+    // 4. Función de primer login
+    async function init() {
+        const name = document.getElementById('n').value;
+        const mesa = document.getElementById('m').value;
+        if(!name || !mesa) return;
+        
+        myId = `${name} (Mesa ${mesa})`;
+        localStorage.setItem("tt_user_id", myId); // Guardamos para el futuro
+        
+        showScreen('sc-wait');
+        setupHardware();
+        
+        if(socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({type:"presence", user_id: myId}));
+        }
+    }
+
+    // 5. Separamos el hardware para poder llamarlo con o sin login manual
+    async function setupHardware() {
+        if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
+        try {
+            const s = await navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}});
+            videoTrack = s.getVideoTracks()[0];
+        } catch(e) { console.log("Sin linterna física"); }
+    }
+
+    function pulsar() { 
+        socket.send(JSON.stringify({type:"player_click", user_id: myId})); 
+    }
+
+    socket.onmessage = async (e) => {
+        const data = JSON.parse(e.data);
+        const overlay = document.getElementById('flash-overlay');
+
+        if(data.action === "prepare_contest") {
+            showScreen('sc-radar');
+            const btn = document.getElementById('btn-p');
+            btn.disabled = true; btn.innerText = "ESPERA";
+            document.body.style.backgroundColor = "#000";
+        }
+        
+        if(data.action === "go_pulsar") {
+            const btn = document.getElementById('btn-p');
+            btn.disabled = false; btn.innerText = "¡DALE!";
+        }
+
+        if(data.action === "winner_found") {
+            const win = data.winner_id === myId;
+            document.getElementById('btn-p').innerText = win ? "¡GANASTE!" : "CASI...";
+            document.body.style.backgroundColor = win ? "#2ecc71" : "#8b0000";
+        }
+
+        if(data.action === "start_flashing") {
+            overlay.style.display = "block";
+            clearInterval(flashInt);
+            flashInt = setInterval(async () => {
+                const isBlack = overlay.style.backgroundColor === 'black' || overlay.style.backgroundColor === '';
+                overlay.style.backgroundColor = isBlack ? (data.color || "#ffffff") : 'black';
+                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isBlack}]}).catch(()=>{});
+            }, 130);
+        }
+
+        if(data.action === "stop_flashing") {
+            clearInterval(flashInt);
+            const isWinner = data.force_winner === myId;
+            overlay.style.backgroundColor = isWinner ? (data.color || "#ffffff") : "black";
+            if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isWinner}]}).catch(()=>{});
+            setTimeout(() => {
+                overlay.style.display = "none";
+                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
+                showScreen('sc-wait');
+            }, 5000);
+        }
+
+        if(data.action === "reset") {
+            clearInterval(flashInt);
+            overlay.style.display = "none";
+            document.body.style.backgroundColor = "#000";
             showScreen('sc-wait');
         }
+    };
 
-        function pulsar() { socket.send(JSON.stringify({type:"player_click", user_id: myId})); }
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
 
-        socket.onmessage = async (e) => {
-            const data = JSON.parse(e.data);
-            const overlay = document.getElementById('flash-overlay');
-
-            if(data.action === "prepare_contest") {
-                showScreen('sc-radar');
-                const btn = document.getElementById('btn-p');
-                btn.disabled = true; btn.innerText = "ESPERA";
-                document.body.style.backgroundColor = "#000";
-            }
-            
-            if(data.action === "go_pulsar") {
-                const btn = document.getElementById('btn-p');
-                btn.disabled = false; btn.innerText = "¡DALE!";
-            }
-
-            if(data.action === "winner_found") {
-                const win = data.winner_id === myId;
-                document.getElementById('btn-p').innerText = win ? "¡GANASTE!" : "CASI...";
-                document.body.style.backgroundColor = win ? "#2ecc71" : "#8b0000";
-            }
-
-            if(data.action === "start_flashing") {
-                overlay.style.display = "block";
-                clearInterval(flashInt);
-                flashInt = setInterval(async () => {
-                    const isBlack = overlay.style.backgroundColor === 'black' || overlay.style.backgroundColor === '';
-                    overlay.style.backgroundColor = isBlack ? (data.color || "#ffffff") : 'black';
-                    if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isBlack}]}).catch(()=>{});
-                }, 130);
-            }
-
-            if(data.action === "stop_flashing") {
-                clearInterval(flashInt);
-                const isWinner = data.force_winner === myId;
-                overlay.style.backgroundColor = isWinner ? (data.color || "#ffffff") : "black";
-                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isWinner}]}).catch(()=>{});
-                setTimeout(() => {
-                    overlay.style.display = "none";
-                    if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
-                    showScreen('sc-wait');
-                }, 5000);
-            }
-
-            if(data.action === "reset") {
-                clearInterval(flashInt);
-                overlay.style.display = "none";
-                document.body.style.backgroundColor = "#000";
-                showScreen('sc-wait');
-            }
-        };
-
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
-
-        setInterval(() => { if(socket.readyState === 1) socket.send(JSON.stringify({type:"ping"})); }, 20000);
-    </script>
+    setInterval(() => { if(socket.readyState === 1) socket.send(JSON.stringify({type:"ping"})); }, 20000);
+</script>
 </body>
 </html>
