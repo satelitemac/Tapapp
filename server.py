@@ -40,6 +40,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 if message["action"] == "reset":
                     winner_id = None
                 await broadcast(message)
+                
+            # ---> EL PUENTE PARA EL CHAT <---
+            elif message.get("type") == "chat":
+                await broadcast(message)
 
     except WebSocketDisconnect:
         all_connections.remove(websocket)
