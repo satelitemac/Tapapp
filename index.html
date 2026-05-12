@@ -124,17 +124,15 @@
             const isWinner = data.force_winner === myId;
             overlay.style.backgroundColor = isWinner ? (data.color || "#ffffff") : "black";
             if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isWinner}]}).catch(()=>{});
-            setTimeout(() => {
-                overlay.style.display = "none";
-                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
-                showScreen('sc-wait');
-            }, 5000);
+            // ELIMINADO EL SETTIMEOUT DE 5 SEGUNDOS AQUÍ
         }
 
         if(data.action === "reset") {
             clearInterval(flashInt);
             overlay.style.display = "none";
             document.body.style.backgroundColor = "#000";
+            // AÑADIDO APAGADO DE LINTERNA AQUÍ
+            if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
             showScreen('sc-wait');
         }
     };
