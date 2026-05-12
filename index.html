@@ -6,52 +6,128 @@
     <title>T&T | EVENT</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap" rel="stylesheet">
     <style>
-        :root { --accent: #ff5e00; }
-        body { margin: 0; background: #000; color: white; font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
-        .screen { display: none; height: 100%; width: 100%; flex-direction: column; align-items: center; justify-content: center; position: absolute; text-align: center; padding: 20px; box-sizing: border-box; }
+        :root { 
+            --accent: #ff5e00; 
+            --tech-gray: #1a1a1a; 
+        }
+
+        /* 1. USAMOS dvh PARA QUE EL CUERPO SE AJUSTE A LAS BARRAS REALES */
+        body, html { 
+            margin: 0; padding: 0; 
+            height: 100dvh; /* Altura dinámica real */
+            width: 100%; 
+            background: #000; color: white; 
+            font-family: 'Inter', sans-serif; 
+            overflow: hidden; 
+        }
+
+        .screen { 
+            display: none; 
+            height: 100dvh; 
+            width: 100%; 
+            flex-direction: column; 
+            align-items: center; 
+            /* 2. REPARTIMOS EL ESPACIO: Logo arriba, contenido centro, botón abajo */
+            justify-content: space-between; 
+            position: absolute; 
+            text-align: center; 
+            /* 3. PADDING QUE RESPETA LA BARRA DE SAFARI/IOS */
+            padding: 40px 20px calc(20px + env(safe-area-inset-bottom)); 
+            box-sizing: border-box; 
+        }
+
         .active { display: flex; z-index: 10; }
-        .btn-main { width: 100%; max-width: 280px; padding: 20px; border-radius: 15px; border: none; background: var(--accent); color: white; font-weight: 900; font-size: 1.2rem; }
-        .radar-btn { width: 220px; height: 220px; border-radius: 50%; border: 10px solid white; background: none; color: white; font-size: 1.8rem; font-weight: 900; transition: all 0.2s; }
-        .radar-btn:active { transform: scale(0.9); }
+
+        /* TIPOGRAFÍA CHULA PARA EL LOGO */
+        .tt-logo {
+            font-family: 'Inter', sans-serif; /* Puedes cambiar a Bebas Neue si la importas */
+            font-weight: 900;
+            font-size: 2.5rem; 
+            letter-spacing: -1px;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        /* EL CONTENEDOR DEL DISCO (Centro) */
+        #now-playing-container { 
+            background: rgba(255,255,255,0.05); 
+            padding: 15px; border-radius: 20px; 
+            border: 1px solid rgba(255,255,255,0.1); 
+            width: 100%; max-width: 280px;
+        }
+
+        #now-playing-img { 
+            width: 100%; aspect-ratio: 1/1; 
+            border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            object-fit: cover;
+        }
+
+        /* ÁREA DE BOTONES (Abajo) */
+        .controls-area {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .input-field { 
+            width: 100%; padding: 18px; margin-bottom: 10px; 
+            border-radius: 12px; border: none; background: #1a1a1a; 
+            color: white; text-align: center; font-size: 1rem; 
+            box-sizing: border-box;
+        }
+
+        /* BOTÓN ESTILO TECHNICS (Para que quede pro) */
+        .technics-btn {
+            width: 100%; padding: 18px;
+            border-radius: 4px; border: none;
+            background: var(--tech-gray); color: #eee;
+            font-weight: 800; font-size: 0.85rem; text-transform: uppercase;
+            letter-spacing: 2px; cursor: pointer;
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.1), 0px 5px 0px #000;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .technics-btn:active { transform: translateY(3px); box-shadow: 0px 2px 0px #000; color: #00d4ff; }
+        .technics-label { font-size: 0.45rem; margin-top: 4px; opacity: 0.5; letter-spacing: 3px; font-weight: 400; }
+
+        .radar-btn { width: 220px; height: 220px; border-radius: 50%; border: 10px solid white; background: none; color: white; font-size: 1.8rem; font-weight: 900; }
         #flash-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:none; pointer-events: none; }
-        .input-field { width: 85%; max-width: 300px; padding: 18px; margin: 10px 0; border-radius: 12px; border: none; background: #1a1a1a; color: white; text-align: center; font-size: 1rem; }
     </style>
 </head>
 <body>
     <div id="flash-overlay"></div>
 
     <div id="sc-login" class="screen active">
-        <h1 style="color:var(--accent)">HOLA!</h1>
-        <input type="text" id="n" class="input-field" placeholder="Nombre">
-        <input type="text" id="m" class="input-field" placeholder="Mesa">
-        <button class="btn-main" onclick="init()">ENTRAR</button>
+        <div class="tt-logo" style="color:var(--accent)">HOLA!</div>
+        <div style="width: 100%; max-width: 280px;">
+            <input type="text" id="n" class="input-field" placeholder="Nombre">
+            <input type="text" id="m" class="input-field" placeholder="Mesa">
+        </div>
+        <button class="technics-btn" onclick="init()" style="background: var(--accent); border-radius: 15px; box-shadow: none; padding: 20px;">
+            ENTRAR
+        </button>
     </div>
 
     <div id="sc-wait" class="screen">
-    <h1 id="wait-msg">CONECTADO</h1>
-    <p style="margin-bottom: 15px; opacity: 0.7;">Mantén esta pestaña abierta...</p>
+        <div class="tt-logo">T&T</div>
 
-    <div id="now-playing-container" style="display: none; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); width: 85%; max-width: 280px; margin: 0 auto;">
-        <p id="np-artist" style="color: #ff5e00; font-weight: 900; margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px;"></p>
-        <p id="np-track" style="color: white; font-weight: 800; margin: 5px 0 15px 0; font-size: 1.1rem; text-transform: uppercase; line-height: 1.2;"></p>
-        <div style="position: relative; width: 100%; aspect-ratio: 1/1; overflow: hidden; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-            <img id="now-playing-img" src="" style="width: 100%; height: 100%; object-fit: cover;">
+        <div id="now-playing-container" style="display: none;">
+            <p id="np-artist" style="color: var(--accent); font-weight: 900; margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px;"></p>
+            <p id="np-track" style="color: white; font-weight: 800; margin: 5px 0 15px 0; font-size: 1.1rem; text-transform: uppercase;"></p>
+            <img id="now-playing-img" src="">
+        </div>
+
+        <div class="controls-area">
+            <input type="text" id="msg-dj" class="input-field" placeholder="¿Alguna petición?">
+            <button class="technics-btn" onclick="sendDJ(event)">
+                <span id="btn-dj-text">ENVIAR AL DJ</span>
+                <span class="technics-label">START · STOP</span>
+            </button>
         </div>
     </div>
 
-    <div style="margin-top: 30px; width: 100%; max-width: 300px;">
-        <input type="text" id="msg-dj" placeholder="¿Alguna petición?" 
-               style="width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #333; background: #111; color: white; box-sizing: border-box; text-align: center;">
-        <button onclick="sendDJ(event)" 
-                style="width: 100%; margin-top: 10px; padding: 15px; border-radius: 10px; border: none; background: #00d4ff; color: black; font-weight: 900; text-transform: uppercase;">
-            ENVIAR AL DJ
-        </button>
-    </div>
-</div>
-
     <div id="sc-radar" class="screen">
+        <div class="tt-logo">¡DALE YA!</div>
         <button id="btn-p" class="radar-btn" onclick="pulsar()">ESPERA</button>
-    </div>
+        <div style="height: 50px;"></div> </div>
 
     <script>
     // 1. Recuperamos el ID si existe de una sesión anterior
