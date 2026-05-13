@@ -4,81 +4,72 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>T&T | EVENT</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800;900&display=swap" rel="stylesheet">
     <style>
         :root { 
             --accent: #ff5e00; 
             --tech-gray: #1a1a1a; 
         }
 
-        /* 1. USAMOS dvh PARA QUE EL CUERPO SE AJUSTE A LAS BARRAS REALES */
+        /* 1. ALTURA DINÁMICA: Se ajusta si Safari abre/cierra su barra */
         body, html { 
             margin: 0; padding: 0; 
-            height: 100dvh; /* Altura dinámica real */
+            height: 100dvh; 
             width: 100%; 
             background: #000; color: white; 
             font-family: 'Inter', sans-serif; 
             overflow: hidden; 
         }
 
+        /* 2. PANTALLAS: Reparten el espacio entre arriba, centro y abajo */
         .screen { 
             display: none; 
             height: 100dvh; 
             width: 100%; 
             flex-direction: column; 
             align-items: center; 
-            /* 2. REPARTIMOS EL ESPACIO: Logo arriba, contenido centro, botón abajo */
             justify-content: space-between; 
             position: absolute; 
             text-align: center; 
-            /* 3. PADDING QUE RESPETA LA BARRA DE SAFARI/IOS */
-            padding: 40px 20px calc(20px + env(safe-area-inset-bottom)); 
+            padding: 20px 20px calc(15px + env(safe-area-inset-bottom)); 
             box-sizing: border-box; 
         }
-
         .active { display: flex; z-index: 10; }
 
-        /* TIPOGRAFÍA CHULA PARA EL LOGO */
         .tt-logo {
-            font-family: 'Inter', sans-serif; /* Puedes cambiar a Bebas Neue si la importas */
-            font-weight: 900;
-            font-size: 2.5rem; 
-            letter-spacing: -1px;
-            margin: 0;
-            text-transform: uppercase;
+            font-weight: 900; font-size: 2.2rem; 
+            letter-spacing: -1px; text-transform: uppercase;
+            margin-top: 10px; flex-shrink: 0;
         }
 
-        /* EL CONTENEDOR DEL DISCO (Centro) */
+        /* 3. EL CONTENEDOR ELÁSTICO (flex: 1) */
         #now-playing-container { 
-            background: rgba(255,255,255,0.05); 
-            padding: 15px; border-radius: 20px; 
-            border: 1px solid rgba(255,255,255,0.1); 
-            width: 100%; max-width: 280px;
+            flex: 1; /* Esto le dice: "estírate o encógete según el espacio que sobre" */
+            display: flex; flex-direction: column; justify-content: center;
+            width: 90%; max-width: 280px;
+            min-height: 0; /* Vital para que pueda encogerse */
+            margin: 10px 0;
         }
 
         #now-playing-img { 
-            width: 100%; aspect-ratio: 1/1; 
-            border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            width: auto; max-width: 100%;
+            max-height: 40dvh; /* Que el disco no coma más del 40% de la pantalla */
+            aspect-ratio: 1/1; border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
             object-fit: cover;
         }
 
-        /* ÁREA DE BOTONES (Abajo) */
-        .controls-area {
-            width: 100%;
-            max-width: 300px;
-        }
+        .controls-area { width: 100%; max-width: 300px; flex-shrink: 0; }
 
         .input-field { 
-            width: 100%; padding: 18px; margin-bottom: 10px; 
+            width: 100%; padding: 18px; margin: 10px 0; 
             border-radius: 12px; border: none; background: #1a1a1a; 
-            color: white; text-align: center; font-size: 1rem; 
-            box-sizing: border-box;
+            color: white; text-align: center; font-size: 1rem; box-sizing: border-box;
         }
 
-        /* BOTÓN ESTILO TECHNICS (Para que quede pro) */
+        /* BOTÓN ESTILO TECHNICS */
         .technics-btn {
-            width: 100%; padding: 18px;
-            border-radius: 4px; border: none;
+            width: 100%; padding: 18px; border-radius: 4px; border: none;
             background: var(--tech-gray); color: #eee;
             font-weight: 800; font-size: 0.85rem; text-transform: uppercase;
             letter-spacing: 2px; cursor: pointer;
@@ -88,7 +79,9 @@
         .technics-btn:active { transform: translateY(3px); box-shadow: 0px 2px 0px #000; color: #00d4ff; }
         .technics-label { font-size: 0.45rem; margin-top: 4px; opacity: 0.5; letter-spacing: 3px; font-weight: 400; }
 
-        .radar-btn { width: 220px; height: 220px; border-radius: 50%; border: 10px solid white; background: none; color: white; font-size: 1.8rem; font-weight: 900; }
+        .radar-btn { width: 220px; height: 220px; border-radius: 50%; border: 10px solid white; background: none; color: white; font-size: 1.8rem; font-weight: 900; transition: all 0.2s; }
+        .radar-btn:active { transform: scale(0.9); }
+        
         #flash-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:none; pointer-events: none; }
     </style>
 </head>
@@ -110,8 +103,10 @@
         <div class="tt-logo">T&T</div>
 
         <div id="now-playing-container" style="display: none;">
-            <p id="np-artist" style="color: var(--accent); font-weight: 900; margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px;"></p>
-            <p id="np-track" style="color: white; font-weight: 800; margin: 5px 0 15px 0; font-size: 1.1rem; text-transform: uppercase;"></p>
+            <div style="margin-bottom: 10px;">
+                <p id="np-artist" style="color: var(--accent); font-weight: 900; margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px;"></p>
+                <p id="np-track" style="color: white; font-weight: 800; margin: 5px 0 10px 0; font-size: 1.1rem; text-transform: uppercase;"></p>
+            </div>
             <img id="now-playing-img" src="">
         </div>
 
@@ -126,157 +121,137 @@
 
     <div id="sc-radar" class="screen">
         <div class="tt-logo">¡DALE YA!</div>
-        <button id="btn-p" class="radar-btn" onclick="pulsar()">ESPERA</button>
-        <div style="height: 50px;"></div> </div>
+        <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
+            <button id="btn-p" class="radar-btn" onclick="pulsar()">ESPERA</button>
+        </div>
+        <div style="height: 50px;"></div> 
+    </div>
 
     <script>
-    // 1. Recuperamos el ID si existe de una sesión anterior
-    let myId = localStorage.getItem("tt_user_id") || ""; 
-    let socket = new WebSocket('wss://tapapp.onrender.com/ws');
-    let videoTrack = null, flashInt = null, wakeLock = null;
+        let myId = localStorage.getItem("tt_user_id") || ""; 
+        let socket = new WebSocket('wss://tapapp.onrender.com/ws');
+        let videoTrack = null, flashInt = null, wakeLock = null;
 
-    // 2. Control de pantalla al iniciar
-    window.onload = () => {
-        if (myId) {
+        window.onload = () => {
+            if (myId) { showScreen('sc-wait'); setupHardware(); } 
+            else { showScreen('sc-login'); }
+        };
+
+        socket.onopen = () => {
+            if (myId) socket.send(JSON.stringify({type:"presence", user_id: myId}));
+        };
+
+        async function init() {
+            const name = document.getElementById('n').value;
+            const mesa = document.getElementById('m').value;
+            if(!name || !mesa) return;
+            myId = `${name} (Mesa ${mesa})`;
+            localStorage.setItem("tt_user_id", myId);
             showScreen('sc-wait');
             setupHardware();
-        } else {
-            showScreen('sc-login');
+            if(socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({type:"presence", user_id: myId}));
         }
-    };
 
-    // 3. Envío de presencia en cuanto el socket abre (vital para reconexiones por refresco)
-    socket.onopen = () => {
-        if (myId) socket.send(JSON.stringify({type:"presence", user_id: myId}));
-    };
-
-    // 4. Función de primer login
-    async function init() {
-        const name = document.getElementById('n').value;
-        const mesa = document.getElementById('m').value;
-        if(!name || !mesa) return;
-        
-        myId = `${name} (Mesa ${mesa})`;
-        localStorage.setItem("tt_user_id", myId); // Guardamos para el futuro
-        
-        showScreen('sc-wait');
-        setupHardware();
-        
-        if(socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify({type:"presence", user_id: myId}));
+        async function setupHardware() {
+            if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
+            try {
+                const s = await navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}});
+                videoTrack = s.getVideoTracks()[0];
+            } catch(e) { console.log("Sin linterna física"); }
         }
-    }
 
-    // 5. Separamos el hardware para poder llamarlo con o sin login manual
-    async function setupHardware() {
-        if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
-        try {
-            const s = await navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}});
-            videoTrack = s.getVideoTracks()[0];
-        } catch(e) { console.log("Sin linterna física"); }
-    }
+        function pulsar() { socket.send(JSON.stringify({type:"player_click", user_id: myId})); }
 
-    function pulsar() { 
-        socket.send(JSON.stringify({type:"player_click", user_id: myId})); 
-    }
+        socket.onmessage = async (e) => {
+            const data = JSON.parse(e.data);
+            const overlay = document.getElementById('flash-overlay');
 
-    socket.onmessage = async (e) => {
-        const data = JSON.parse(e.data);
-        console.log("📥 MENSAJE RECIBIDO:", data); // <--- AÑADE ESTO AQUÍ
-        
-        const overlay = document.getElementById('flash-overlay');
-
-        // --- 1. ACTUALIZACIÓN DE PORTADA (Viene de Streamlit) ---
-        if(data.action === "update_cover") {
-            const container = document.getElementById('now-playing-container');
-            if(data.url && data.url !== "") {
-                document.getElementById('now-playing-img').src = data.url;
-                document.getElementById('np-artist').innerText = data.artist || "ARTISTA DESCONOCIDO";
-                document.getElementById('np-track').innerText = data.track || "PISTA DESCONOCIDA";
-                container.style.display = "block";
-            } else {
-                container.style.display = "none";
+            if(data.action === "update_cover") {
+                const container = document.getElementById('now-playing-container');
+                if(data.url && data.url !== "") {
+                    document.getElementById('now-playing-img').src = data.url;
+                    document.getElementById('np-artist').innerText = data.artist || "ARTISTA DESCONOCIDO";
+                    document.getElementById('np-track').innerText = data.track || "PISTA DESCONOCIDA";
+                    container.style.display = "flex"; // Usamos flex para el centrado
+                } else {
+                    container.style.display = "none";
+                }
             }
+
+            if(data.action === "prepare_contest") {
+                showScreen('sc-radar');
+                const btn = document.getElementById('btn-p');
+                btn.disabled = true; btn.innerText = "ESPERA";
+                document.body.style.backgroundColor = "#000";
+            }
+            
+            if(data.action === "go_pulsar") {
+                const btn = document.getElementById('btn-p');
+                btn.disabled = false; btn.innerText = "¡DALE!";
+            }
+
+            if(data.action === "winner_found") {
+                const win = data.winner_id === myId;
+                document.getElementById('btn-p').innerText = win ? "¡GANASTE!" : "CASI...";
+                document.body.style.backgroundColor = win ? "#2ecc71" : "#8b0000";
+            }
+
+            if(data.action === "start_flashing") {
+                overlay.style.display = "block";
+                clearInterval(flashInt);
+                flashInt = setInterval(async () => {
+                    const isBlack = overlay.style.backgroundColor === 'black' || overlay.style.backgroundColor === '';
+                    overlay.style.backgroundColor = isBlack ? (data.color || "#ffffff") : 'black';
+                    if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isBlack}]}).catch(()=>{});
+                }, 130);
+            }
+
+            if(data.action === "stop_flashing") {
+                clearInterval(flashInt);
+                const isWinner = data.force_winner === myId;
+                overlay.style.backgroundColor = isWinner ? (data.color || "#ffffff") : "black";
+                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isWinner}]}).catch(()=>{});
+            }
+
+            if(data.action === "reset") {
+                clearInterval(flashInt);
+                overlay.style.display = "none";
+                document.body.style.backgroundColor = "#000";
+                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
+                showScreen('sc-wait');
+            }
+
+            if(data.action === "hard_reset") {
+                localStorage.removeItem("tt_user_id");
+                location.reload();
+            }
+        };
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
         }
 
-        // --- 2. LÓGICA DE CONCURSOS ---
-        if(data.action === "prepare_contest") {
-            showScreen('sc-radar');
-            const btn = document.getElementById('btn-p');
-            btn.disabled = true; btn.innerText = "ESPERA";
-            document.body.style.backgroundColor = "#000";
-        }
-        
-        if(data.action === "go_pulsar") {
-            const btn = document.getElementById('btn-p');
-            btn.disabled = false; btn.innerText = "¡DALE!";
-        }
+        setInterval(() => { if(socket.readyState === 1) socket.send(JSON.stringify({type:"ping"})); }, 20000);
 
-        if(data.action === "winner_found") {
-            const win = data.winner_id === myId;
-            document.getElementById('btn-p').innerText = win ? "¡GANASTE!" : "CASI...";
-            document.body.style.backgroundColor = win ? "#2ecc71" : "#8b0000";
+        function sendDJ(event) {
+            const input = document.getElementById('msg-dj');
+            const txt = input.value.trim();
+            if(!txt) return;
+            
+            socket.send(JSON.stringify({type: "chat", user_id: myId, text: txt }));
+            
+            input.value = "";
+            const btn = event.currentTarget;
+            const btnText = btn.querySelector('#btn-dj-text') || btn;
+            const originalText = btnText.innerText;
+            btnText.innerText = "¡ENVIADO!";
+            btn.style.background = "#2ecc71";
+            setTimeout(() => {
+                btnText.innerText = originalText;
+                btn.style.background = ""; // Vuelve al color del CSS
+            }, 2000);
         }
-
-        if(data.action === "start_flashing") {
-            overlay.style.display = "block";
-            clearInterval(flashInt);
-            flashInt = setInterval(async () => {
-                const isBlack = overlay.style.backgroundColor === 'black' || overlay.style.backgroundColor === '';
-                overlay.style.backgroundColor = isBlack ? (data.color || "#ffffff") : 'black';
-                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isBlack}]}).catch(()=>{});
-            }, 130);
-        }
-
-        if(data.action === "stop_flashing") {
-            clearInterval(flashInt);
-            const isWinner = data.force_winner === myId;
-            overlay.style.backgroundColor = isWinner ? (data.color || "#ffffff") : "black";
-            if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isWinner}]}).catch(()=>{});
-        }
-
-        if(data.action === "reset") {
-            clearInterval(flashInt);
-            overlay.style.display = "none";
-            document.body.style.backgroundColor = "#000";
-            if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
-            showScreen('sc-wait');
-        }
-
-        // --- 3. LIMPIEZA TOTAL (Para el final de la noche) ---
-        if(data.action === "hard_reset") {
-            localStorage.removeItem("tt_user_id");
-            location.reload();
-        }
-    };
-
-    function showScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-    }
-
-    setInterval(() => { if(socket.readyState === 1) socket.send(JSON.stringify({type:"ping"})); }, 20000);
-    function sendDJ(event) {
-        const input = document.getElementById('msg-dj');
-        const txt = input.value.trim();
-        if(!txt) return;
-        
-        socket.send(JSON.stringify({
-            type: "chat", 
-            user_id: myId, 
-            text: txt 
-        }));
-        
-        input.value = "";
-        const btn = event.target;
-        const originalText = btn.innerText;
-        btn.innerText = "¡ENVIADO!";
-        btn.style.background = "#2ecc71";
-        setTimeout(() => {
-            btn.innerText = originalText;
-            btn.style.background = "#00d4ff";
-        }, 2000);
-    }
-</script>
+    </script>
 </body>
 </html>
