@@ -9,59 +9,58 @@
         :root { --accent: #ff5e00; --tech-gray: #1a1a1a; }
 
         body, html { 
-            margin: 0; padding: 0; height: 100svh; width: 100%; 
+            margin: 0; padding: 0; height: 100%; width: 100%; 
             background: #000; color: white; font-family: 'Inter', sans-serif; overflow: hidden; 
         }
 
-        /* LOGO EN CAPA SUPERIOR (No ocupa espacio de centrado) */
-        .tt-logo {
-            position: absolute; top: 40px; left: 0; width: 100%;
-            text-align: center; font-weight: 900; font-size: 2.2rem;
-            letter-spacing: -1px; text-transform: uppercase; z-index: 100;
-            pointer-events: none;
-        }
-
-        /* PANTALLAS */
+        /* VOLVEMOS A LA LÓGICA SIMPLE DE HACE 40 HORAS */
         .screen { 
-            display: none; height: 100svh; width: 100%; 
-            position: absolute; top: 0; left: 0;
-            box-sizing: border-box; background: #000;
+            display: none; 
+            height: 100vh; /* Volvemos al vh estándar que no nos daba problemas de centrado */
+            width: 100%; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            text-align: center;
+            box-sizing: border-box;
+            padding: 20px;
+        }
+        .active { display: flex; z-index: 10; }
+
+        .tt-logo {
+            font-weight: 900; font-size: 2.2rem; 
+            letter-spacing: -1px; text-transform: uppercase;
+            margin-bottom: 20px;
         }
 
-        /* GRID PARA CENTRADO MATEMÁTICO */
-        .active { display: grid; place-items: center; z-index: 10; }
-
-        /* EXCEPCIÓN PARA LA HOME: Necesitamos reparto arriba/centro/abajo */
+        /* PANTALLA ESPERA (Sigue necesitando el reparto para que el botón no se tape) */
         #sc-wait.active {
-            display: flex; flex-direction: column; justify-content: space-between;
-            padding: 100px 20px calc(20px + env(safe-area-inset-bottom));
+            justify-content: space-between;
+            padding-top: 40px;
+            padding-bottom: calc(30px + env(safe-area-inset-bottom));
         }
 
-        /* CONTENEDOR DISCO (HOME) */
         #now-playing-container { 
             flex: 1; display: flex; flex-direction: column; justify-content: center;
             width: 100%; max-width: 280px; min-height: 0;
         }
         #now-playing-img { 
-            width: auto; max-width: 100%; max-height: 40svh; 
-            aspect-ratio: 1/1; border-radius: 12px; 
+            width: 100%; aspect-ratio: 1/1; border-radius: 12px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: cover;
         }
 
-        /* BOTONES Y CAMPOS */
         .controls-area { width: 100%; max-width: 300px; }
         .input-field { width: 100%; padding: 18px; margin-bottom: 10px; border-radius: 12px; border: none; background: #1a1a1a; color: white; text-align: center; font-size: 1rem; box-sizing: border-box; }
         
         .technics-btn { 
             width: 100%; padding: 18px; border-radius: 4px; border: none; background: var(--tech-gray); color: #eee; 
-            font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; cursor: pointer;
+            font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px;
             box-shadow: inset 1px 1px 2px rgba(255,255,255,0.1), 0px 5px 0px #000;
             display: flex; flex-direction: column; align-items: center;
         }
         .technics-btn:active { transform: translateY(3px); box-shadow: 0px 2px 0px #000; color: #00d4ff; }
         .technics-label { font-size: 0.45rem; margin-top: 4px; opacity: 0.5; letter-spacing: 3px; }
 
-        /* RADAR BUTTON (CENTRADO POR GRID) */
         .radar-btn { 
             width: 220px; height: 220px; border-radius: 50%; border: 10px solid white; 
             background: none; color: white; font-size: 1.8rem; font-weight: 900;
@@ -131,9 +130,8 @@
             if(socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({type:"presence", user_id: myId}));
         }
 
-        // --- LA FUNCIÓN DE LIMPIEZA ---
         function hardReset() {
-            console.log("🧹 Limpiando sesión por orden del admin...");
+            console.log("🧹 Hard Reset ejecutado.");
             localStorage.removeItem("tt_user_id");
             location.reload();
         }
@@ -151,10 +149,9 @@
         socket.onmessage = async (e) => {
             const data = JSON.parse(e.data);
             
-            // --- AQUÍ ESTÁ LA ESCUCHA DEL ADMIN ---
             if(data.action === "hard_reset") {
                 hardReset();
-                return; // Cortamos aquí para que no ejecute nada más
+                return;
             }
 
             if(data.action === "update_cover") {
