@@ -11,61 +11,69 @@
             --tech-gray: #1a1a1a; 
         }
 
-        /* 1. EL SECRETO: 100dvh + viewport-fit=cover en el meta */
         body, html { 
             margin: 0; padding: 0; 
-            height: 100dvh; /* Altura dinámica real */
+            height: 100dvh; 
             width: 100%; 
             background: #000; color: white; 
             font-family: 'Inter', sans-serif; 
             overflow: hidden; 
         }
 
+        /* 1. Base para todas las pantallas: Centrado Total */
         .screen { 
             display: none; 
             height: 100dvh; 
             width: 100%; 
             flex-direction: column; 
             align-items: center; 
+            justify-content: center; /* Centrado vertical puro */
             position: absolute; 
             text-align: center; 
-            /* Ajuste milimétrico de padding inferior */
-            padding: 20px 20px calc(10px + env(safe-area-inset-bottom)); 
+            padding: 20px; 
             box-sizing: border-box; 
         }
+
         .active { display: flex; z-index: 10; }
 
+        /* 2. El logo: Flota arriba para no empujar nada al centro */
         .tt-logo {
             font-weight: 900; font-size: 2.2rem; 
             letter-spacing: -1px; text-transform: uppercase;
-            margin-top: 10px; flex-shrink: 0;
+            position: absolute; 
+            top: 25px; 
+            flex-shrink: 0;
+            z-index: 20;
         }
 
-        /* 2. EL MUELLE: Este contenedor se estira para empujar al botón abajo */
+        /* 3. Ajuste específico para la pantalla de música (sc-wait) */
+        #sc-wait {
+            justify-content: space-between;
+            /* Padding inferior que respeta la barra de Safari/Chrome */
+            padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+        }
+
         #now-playing-container { 
             flex: 1; 
-            display: flex; flex-direction: column; 
-            justify-content: center; /* Centra el disco en el espacio sobrante */
-            width: 100%; max-width: 280px;
-            min-height: 0; /* Permite que se encoja en móviles pequeños */
-            margin: 10px 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 100%;
+            max-width: 280px;
+            min-height: 0; 
         }
 
         #now-playing-img { 
             width: auto; max-width: 100%;
-            /* Freno de seguridad: que el disco nunca coma más del 45% de la pantalla */
-            max-height: 45dvh; 
+            max-height: 40dvh; 
             aspect-ratio: 1/1; border-radius: 12px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
             object-fit: cover;
-            margin: 0 auto;
         }
 
-        /* 3. EL ANCLA: Los controles se quedan fijos abajo */
         .controls-area { 
             width: 100%; max-width: 300px; 
             flex-shrink: 0; 
-            margin-bottom: 5px; /* Ajuste para no tocar el borde físico */
         }
 
         .input-field { 
@@ -96,7 +104,7 @@
 
     <div id="sc-login" class="screen active">
         <div class="tt-logo" style="color:var(--accent)">HOLA!</div>
-        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; max-width: 280px;">
+        <div style="width: 100%; max-width: 280px; margin-bottom: 20px;">
             <input type="text" id="n" class="input-field" placeholder="Nombre">
             <input type="text" id="m" class="input-field" placeholder="Mesa">
         </div>
@@ -127,14 +135,10 @@
 
     <div id="sc-radar" class="screen">
         <div class="tt-logo">¡DALE YA!</div>
-        <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
-            <button id="btn-p" class="radar-btn" onclick="pulsar()">ESPERA</button>
-        </div>
-        <div style="height: 20px;"></div> 
+        <button id="btn-p" class="radar-btn" onclick="pulsar()">ESPERA</button>
     </div>
 
     <script>
-        // MANTÉN TU SCRIPT COMPLETO AQUÍ (No he tocado ninguna función)
         let myId = localStorage.getItem("tt_user_id") || ""; 
         let socket = new WebSocket('wss://tapapp.onrender.com/ws');
         let videoTrack = null, flashInt = null, wakeLock = null;
@@ -167,7 +171,9 @@
             } catch(e) { console.log("Sin linterna física"); }
         }
 
-        function pulsar() { socket.send(JSON.stringify({type:"player_click", user_id: myId})); }
+        function pulsar() { 
+            socket.send(JSON.stringify({type:"player_click", user_id: myId})); 
+        }
 
         socket.onmessage = async (e) => {
             const data = JSON.parse(e.data);
@@ -245,7 +251,9 @@
             const input = document.getElementById('msg-dj');
             const txt = input.value.trim();
             if(!txt) return;
+            
             socket.send(JSON.stringify({type: "chat", user_id: myId, text: txt }));
+            
             input.value = "";
             const btn = event.currentTarget;
             const btnText = btn.querySelector('#btn-dj-text') || btn;
