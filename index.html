@@ -11,91 +11,76 @@
             --tech-gray: #1a1a1a; 
         }
 
+        /* 1. RESET TOTAL */
         body, html { 
             margin: 0; padding: 0; 
-            height: 100dvh; 
+            height: 100svh; /* Usamos svh: el área mínima garantizada */
             width: 100%; 
             background: #000; color: white; 
             font-family: 'Inter', sans-serif; 
             overflow: hidden; 
         }
 
-        /* 1. Base para todas las pantallas: Centrado Total */
         .screen { 
             display: none; 
-            height: 100dvh; 
+            height: 100svh; 
             width: 100%; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; /* Centrado vertical puro */
             position: absolute; 
-            text-align: center; 
-            padding: 20px; 
+            top: 0; left: 0;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center; /* CENTRADO POR DEFECTO */
             box-sizing: border-box; 
         }
 
         .active { display: flex; z-index: 10; }
 
-        /* 2. El logo: Flota arriba para no empujar nada al centro */
+        /* 2. EL LOGO: Ya no empuja al botón porque flota */
         .tt-logo {
+            position: absolute; 
+            top: 40px; /* Distancia fija desde el techo */
             font-weight: 900; font-size: 2.2rem; 
             letter-spacing: -1px; text-transform: uppercase;
-            position: absolute; 
-            top: 25px; 
-            flex-shrink: 0;
-            z-index: 20;
+            text-align: center;
+            width: 100%;
+            z-index: 100;
         }
 
-        /* 3. Ajuste específico para la pantalla de música (sc-wait) */
+        /* 3. PANTALLA DE MÚSICA (Excepción de centrado) */
         #sc-wait {
-            justify-content: space-between;
-            /* Padding inferior que respeta la barra de Safari/Chrome */
-            padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+            justify-content: space-between; /* Esta sí reparte espacio */
+            padding: 100px 20px calc(20px + env(safe-area-inset-bottom)); 
         }
 
         #now-playing-container { 
-            flex: 1; 
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            width: 100%;
-            max-width: 280px;
-            min-height: 0; 
+            flex: 1; display: flex; flex-direction: column; justify-content: center;
+            width: 100%; max-width: 280px; min-height: 0;
         }
 
         #now-playing-img { 
-            width: auto; max-width: 100%;
-            max-height: 40dvh; 
+            width: auto; max-width: 100%; max-height: 40svh; 
             aspect-ratio: 1/1; border-radius: 12px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
-            object-fit: cover;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: cover;
         }
 
-        .controls-area { 
-            width: 100%; max-width: 300px; 
-            flex-shrink: 0; 
+        /* 4. PANTALLA DE RADAR: CENTRADO ABSOLUTO */
+        #sc-radar {
+            justify-content: center; /* Centra el botón muerto en el medio */
+            padding: 0;
         }
 
-        .input-field { 
-            width: 100%; padding: 18px; margin-bottom: 10px; 
-            border-radius: 12px; border: none; background: #1a1a1a; 
-            color: white; text-align: center; font-size: 1rem; box-sizing: border-box;
+        .radar-btn { 
+            width: 220px; height: 220px; border-radius: 50%; 
+            border: 10px solid white; background: none; color: white; 
+            font-size: 1.8rem; font-weight: 900; 
+            display: flex; align-items: center; justify-content: center;
         }
 
-        .technics-btn {
-            width: 100%; padding: 18px; border-radius: 4px; border: none;
-            background: var(--tech-gray); color: #eee;
-            font-weight: 800; font-size: 0.85rem; text-transform: uppercase;
-            letter-spacing: 2px; cursor: pointer;
-            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.1), 0px 5px 0px #000;
-            display: flex; flex-direction: column; align-items: center;
-        }
-        .technics-btn:active { transform: translateY(3px); box-shadow: 0px 2px 0px #000; color: #00d4ff; }
+        /* 5. OTROS */
+        .input-field { width: 100%; padding: 18px; margin-bottom: 10px; border-radius: 12px; border: none; background: #1a1a1a; color: white; text-align: center; font-size: 1rem; box-sizing: border-box; }
+        .controls-area { width: 100%; max-width: 300px; flex-shrink: 0; }
+        .technics-btn { width: 100%; padding: 18px; border-radius: 4px; border: none; background: var(--tech-gray); color: #eee; font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; box-shadow: inset 1px 1px 2px rgba(255,255,255,0.1), 0px 5px 0px #000; display: flex; flex-direction: column; align-items: center; }
         .technics-label { font-size: 0.45rem; margin-top: 4px; opacity: 0.5; letter-spacing: 3px; font-weight: 400; }
-
-        .radar-btn { width: 220px; height: 220px; border-radius: 50%; border: 10px solid white; background: none; color: white; font-size: 1.8rem; font-weight: 900; transition: all 0.2s; }
-        .radar-btn:active { transform: scale(0.9); }
-        
         #flash-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:none; pointer-events: none; }
     </style>
 </head>
@@ -108,14 +93,11 @@
             <input type="text" id="n" class="input-field" placeholder="Nombre">
             <input type="text" id="m" class="input-field" placeholder="Mesa">
         </div>
-        <button class="technics-btn" onclick="init()" style="background: var(--accent); border-radius: 15px; box-shadow: none; padding: 20px;">
-            ENTRAR
-        </button>
+        <button class="technics-btn" onclick="init()" style="background: var(--accent); border-radius: 15px; box-shadow: none; padding: 20px;">ENTRAR</button>
     </div>
 
     <div id="sc-wait" class="screen">
-        <div class="tt-logo">T&T</div>
-
+        <div class="tt-logo">TAPES & TAPAS</div>
         <div id="now-playing-container" style="display: none;">
             <div style="margin-bottom: 10px;">
                 <p id="np-artist" style="color: var(--accent); font-weight: 900; margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px;"></p>
@@ -123,7 +105,6 @@
             </div>
             <img id="now-playing-img" src="">
         </div>
-
         <div class="controls-area">
             <input type="text" id="msg-dj" class="input-field" placeholder="¿Alguna petición?">
             <button class="technics-btn" onclick="sendDJ(event)">
@@ -168,27 +149,21 @@
             try {
                 const s = await navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}});
                 videoTrack = s.getVideoTracks()[0];
-            } catch(e) { console.log("Sin linterna física"); }
+            } catch(e) { console.log("Sin linterna"); }
         }
 
-        function pulsar() { 
-            socket.send(JSON.stringify({type:"player_click", user_id: myId})); 
-        }
+        function pulsar() { socket.send(JSON.stringify({type:"player_click", user_id: myId})); }
 
         socket.onmessage = async (e) => {
             const data = JSON.parse(e.data);
-            const overlay = document.getElementById('flash-overlay');
-
             if(data.action === "update_cover") {
                 const container = document.getElementById('now-playing-container');
                 if(data.url && data.url !== "") {
                     document.getElementById('now-playing-img').src = data.url;
-                    document.getElementById('np-artist').innerText = data.artist || "ARTISTA DESCONOCIDO";
-                    document.getElementById('np-track').innerText = data.track || "PISTA DESCONOCIDA";
+                    document.getElementById('np-artist').innerText = data.artist || "ARTISTA";
+                    document.getElementById('np-track').innerText = data.track || "PISTA";
                     container.style.display = "flex"; 
-                } else {
-                    container.style.display = "none";
-                }
+                } else { container.style.display = "none"; }
             }
 
             if(data.action === "prepare_contest") {
@@ -210,9 +185,10 @@
             }
 
             if(data.action === "start_flashing") {
-                overlay.style.display = "block";
+                document.getElementById('flash-overlay').style.display = "block";
                 clearInterval(flashInt);
                 flashInt = setInterval(async () => {
+                    const overlay = document.getElementById('flash-overlay');
                     const isBlack = overlay.style.backgroundColor === 'black' || overlay.style.backgroundColor === '';
                     overlay.style.backgroundColor = isBlack ? (data.color || "#ffffff") : 'black';
                     if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isBlack}]}).catch(()=>{});
@@ -222,13 +198,13 @@
             if(data.action === "stop_flashing") {
                 clearInterval(flashInt);
                 const isWinner = data.force_winner === myId;
-                overlay.style.backgroundColor = isWinner ? (data.color || "#ffffff") : "black";
+                document.getElementById('flash-overlay').style.backgroundColor = isWinner ? (data.color || "#ffffff") : "black";
                 if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isWinner}]}).catch(()=>{});
             }
 
             if(data.action === "reset") {
                 clearInterval(flashInt);
-                overlay.style.display = "none";
+                document.getElementById('flash-overlay').style.display = "none";
                 document.body.style.backgroundColor = "#000";
                 if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
                 showScreen('sc-wait');
@@ -251,19 +227,14 @@
             const input = document.getElementById('msg-dj');
             const txt = input.value.trim();
             if(!txt) return;
-            
             socket.send(JSON.stringify({type: "chat", user_id: myId, text: txt }));
-            
             input.value = "";
             const btn = event.currentTarget;
             const btnText = btn.querySelector('#btn-dj-text') || btn;
             const originalText = btnText.innerText;
             btnText.innerText = "¡ENVIADO!";
             btn.style.background = "#2ecc71";
-            setTimeout(() => {
-                btnText.innerText = originalText;
-                btn.style.background = ""; 
-            }, 2000);
+            setTimeout(() => { btnText.innerText = originalText; btn.style.background = ""; }, 2000);
         }
     </script>
 </body>
