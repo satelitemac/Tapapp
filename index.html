@@ -6,81 +6,68 @@
     <title>T&T | EVENT</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800;900&display=swap" rel="stylesheet">
     <style>
-        :root { 
-            --accent: #ff5e00; 
-            --tech-gray: #1a1a1a; 
-        }
+        :root { --accent: #ff5e00; --tech-gray: #1a1a1a; }
 
-        /* 1. RESET TOTAL */
         body, html { 
-            margin: 0; padding: 0; 
-            height: 100svh; /* Usamos svh: el área mínima garantizada */
-            width: 100%; 
-            background: #000; color: white; 
-            font-family: 'Inter', sans-serif; 
-            overflow: hidden; 
+            margin: 0; padding: 0; height: 100svh; width: 100%; 
+            background: #000; color: white; font-family: 'Inter', sans-serif; overflow: hidden; 
         }
 
-        .screen { 
-            display: none; 
-            height: 100svh; 
-            width: 100%; 
-            position: absolute; 
-            top: 0; left: 0;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center; /* CENTRADO POR DEFECTO */
-            box-sizing: border-box; 
-        }
-
-        .active { display: flex; z-index: 10; }
-
-        /* 2. EL LOGO: Ya no empuja al botón porque flota */
+        /* LOGO EN CAPA SUPERIOR (No ocupa espacio de centrado) */
         .tt-logo {
-            position: absolute; 
-            top: 40px; /* Distancia fija desde el techo */
-            font-weight: 900; font-size: 2.2rem; 
-            letter-spacing: -1px; text-transform: uppercase;
-            text-align: center;
-            width: 100%;
-            z-index: 100;
+            position: absolute; top: 40px; left: 0; width: 100%;
+            text-align: center; font-weight: 900; font-size: 2.2rem;
+            letter-spacing: -1px; text-transform: uppercase; z-index: 100;
+            pointer-events: none;
         }
 
-        /* 3. PANTALLA DE MÚSICA (Excepción de centrado) */
-        #sc-wait {
-            justify-content: space-between; /* Esta sí reparte espacio */
-            padding: 100px 20px calc(20px + env(safe-area-inset-bottom)); 
+        /* PANTALLAS */
+        .screen { 
+            display: none; height: 100svh; width: 100%; 
+            position: absolute; top: 0; left: 0;
+            box-sizing: border-box; background: #000;
         }
 
+        /* GRID PARA CENTRADO MATEMÁTICO */
+        .active { display: grid; place-items: center; z-index: 10; }
+
+        /* EXCEPCIÓN PARA LA HOME: Necesitamos reparto arriba/centro/abajo */
+        #sc-wait.active {
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 100px 20px calc(20px + env(safe-area-inset-bottom));
+        }
+
+        /* CONTENEDOR DISCO (HOME) */
         #now-playing-container { 
             flex: 1; display: flex; flex-direction: column; justify-content: center;
             width: 100%; max-width: 280px; min-height: 0;
         }
-
         #now-playing-img { 
             width: auto; max-width: 100%; max-height: 40svh; 
             aspect-ratio: 1/1; border-radius: 12px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: cover;
         }
 
-        /* 4. PANTALLA DE RADAR: CENTRADO ABSOLUTO */
-        #sc-radar {
-            justify-content: center; /* Centra el botón muerto en el medio */
-            padding: 0;
+        /* BOTONES Y CAMPOS */
+        .controls-area { width: 100%; max-width: 300px; }
+        .input-field { width: 100%; padding: 18px; margin-bottom: 10px; border-radius: 12px; border: none; background: #1a1a1a; color: white; text-align: center; font-size: 1rem; box-sizing: border-box; }
+        
+        .technics-btn { 
+            width: 100%; padding: 18px; border-radius: 4px; border: none; background: var(--tech-gray); color: #eee; 
+            font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; cursor: pointer;
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.1), 0px 5px 0px #000;
+            display: flex; flex-direction: column; align-items: center;
         }
+        .technics-btn:active { transform: translateY(3px); box-shadow: 0px 2px 0px #000; color: #00d4ff; }
+        .technics-label { font-size: 0.45rem; margin-top: 4px; opacity: 0.5; letter-spacing: 3px; }
 
+        /* RADAR BUTTON (CENTRADO POR GRID) */
         .radar-btn { 
-            width: 220px; height: 220px; border-radius: 50%; 
-            border: 10px solid white; background: none; color: white; 
-            font-size: 1.8rem; font-weight: 900; 
+            width: 220px; height: 220px; border-radius: 50%; border: 10px solid white; 
+            background: none; color: white; font-size: 1.8rem; font-weight: 900;
             display: flex; align-items: center; justify-content: center;
         }
 
-        /* 5. OTROS */
-        .input-field { width: 100%; padding: 18px; margin-bottom: 10px; border-radius: 12px; border: none; background: #1a1a1a; color: white; text-align: center; font-size: 1rem; box-sizing: border-box; }
-        .controls-area { width: 100%; max-width: 300px; flex-shrink: 0; }
-        .technics-btn { width: 100%; padding: 18px; border-radius: 4px; border: none; background: var(--tech-gray); color: #eee; font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; box-shadow: inset 1px 1px 2px rgba(255,255,255,0.1), 0px 5px 0px #000; display: flex; flex-direction: column; align-items: center; }
-        .technics-label { font-size: 0.45rem; margin-top: 4px; opacity: 0.5; letter-spacing: 3px; font-weight: 400; }
         #flash-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:none; pointer-events: none; }
     </style>
 </head>
@@ -89,17 +76,17 @@
 
     <div id="sc-login" class="screen active">
         <div class="tt-logo" style="color:var(--accent)">HOLA!</div>
-        <div style="width: 100%; max-width: 280px; margin-bottom: 20px;">
+        <div class="controls-area">
             <input type="text" id="n" class="input-field" placeholder="Nombre">
             <input type="text" id="m" class="input-field" placeholder="Mesa">
+            <button class="technics-btn" onclick="init()" style="background: var(--accent); border-radius: 15px; box-shadow: none; padding: 20px;">ENTRAR</button>
         </div>
-        <button class="technics-btn" onclick="init()" style="background: var(--accent); border-radius: 15px; box-shadow: none; padding: 20px;">ENTRAR</button>
     </div>
 
     <div id="sc-wait" class="screen">
         <div class="tt-logo">TAPES & TAPAS</div>
         <div id="now-playing-container" style="display: none;">
-            <div style="margin-bottom: 10px;">
+            <div style="margin-bottom: 10px; text-align: center;">
                 <p id="np-artist" style="color: var(--accent); font-weight: 900; margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px;"></p>
                 <p id="np-track" style="color: white; font-weight: 800; margin: 5px 0 10px 0; font-size: 1.1rem; text-transform: uppercase;"></p>
             </div>
@@ -144,6 +131,13 @@
             if(socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({type:"presence", user_id: myId}));
         }
 
+        // --- LA FUNCIÓN DE LIMPIEZA ---
+        function hardReset() {
+            console.log("🧹 Limpiando sesión por orden del admin...");
+            localStorage.removeItem("tt_user_id");
+            location.reload();
+        }
+
         async function setupHardware() {
             if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
             try {
@@ -156,6 +150,13 @@
 
         socket.onmessage = async (e) => {
             const data = JSON.parse(e.data);
+            
+            // --- AQUÍ ESTÁ LA ESCUCHA DEL ADMIN ---
+            if(data.action === "hard_reset") {
+                hardReset();
+                return; // Cortamos aquí para que no ejecute nada más
+            }
+
             if(data.action === "update_cover") {
                 const container = document.getElementById('now-playing-container');
                 if(data.url && data.url !== "") {
@@ -209,11 +210,6 @@
                 if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
                 showScreen('sc-wait');
             }
-
-            if(data.action === "hard_reset") {
-                localStorage.removeItem("tt_user_id");
-                location.reload();
-            }
         };
 
         function showScreen(id) {
@@ -229,12 +225,10 @@
             if(!txt) return;
             socket.send(JSON.stringify({type: "chat", user_id: myId, text: txt }));
             input.value = "";
-            const btn = event.currentTarget;
-            const btnText = btn.querySelector('#btn-dj-text') || btn;
+            const btnText = document.getElementById('btn-dj-text');
             const originalText = btnText.innerText;
             btnText.innerText = "¡ENVIADO!";
-            btn.style.background = "#2ecc71";
-            setTimeout(() => { btnText.innerText = originalText; btn.style.background = ""; }, 2000);
+            setTimeout(() => { btnText.innerText = originalText; }, 2000);
         }
     </script>
 </body>
