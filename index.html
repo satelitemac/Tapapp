@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>T&T | EVENT</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800;900&display=swap" rel="stylesheet">
     <style>
@@ -11,27 +11,26 @@
             --tech-gray: #1a1a1a; 
         }
 
-        /* 1. ALTURA DINÁMICA: Se ajusta si Safari abre/cierra su barra */
+        /* 1. EL SECRETO: 100dvh + viewport-fit=cover en el meta */
         body, html { 
             margin: 0; padding: 0; 
-            height: 100dvh; 
+            height: 100dvh; /* Altura dinámica real */
             width: 100%; 
             background: #000; color: white; 
             font-family: 'Inter', sans-serif; 
             overflow: hidden; 
         }
 
-        /* 2. PANTALLAS: Reparten el espacio entre arriba, centro y abajo */
         .screen { 
             display: none; 
             height: 100dvh; 
             width: 100%; 
             flex-direction: column; 
             align-items: center; 
-            justify-content: space-between; 
             position: absolute; 
             text-align: center; 
-            padding: 20px 20px calc(15px + env(safe-area-inset-bottom)); 
+            /* Ajuste milimétrico de padding inferior */
+            padding: 20px 20px calc(10px + env(safe-area-inset-bottom)); 
             box-sizing: border-box; 
         }
         .active { display: flex; z-index: 10; }
@@ -42,32 +41,39 @@
             margin-top: 10px; flex-shrink: 0;
         }
 
-        /* 3. EL CONTENEDOR ELÁSTICO (flex: 1) */
+        /* 2. EL MUELLE: Este contenedor se estira para empujar al botón abajo */
         #now-playing-container { 
-            flex: 1; /* Esto le dice: "estírate o encógete según el espacio que sobre" */
-            display: flex; flex-direction: column; justify-content: center;
-            width: 90%; max-width: 280px;
-            min-height: 0; /* Vital para que pueda encogerse */
+            flex: 1; 
+            display: flex; flex-direction: column; 
+            justify-content: center; /* Centra el disco en el espacio sobrante */
+            width: 100%; max-width: 280px;
+            min-height: 0; /* Permite que se encoja en móviles pequeños */
             margin: 10px 0;
         }
 
         #now-playing-img { 
             width: auto; max-width: 100%;
-            max-height: 40dvh; /* Que el disco no coma más del 40% de la pantalla */
+            /* Freno de seguridad: que el disco nunca coma más del 45% de la pantalla */
+            max-height: 45dvh; 
             aspect-ratio: 1/1; border-radius: 12px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
             object-fit: cover;
+            margin: 0 auto;
         }
 
-        .controls-area { width: 100%; max-width: 300px; flex-shrink: 0; }
+        /* 3. EL ANCLA: Los controles se quedan fijos abajo */
+        .controls-area { 
+            width: 100%; max-width: 300px; 
+            flex-shrink: 0; 
+            margin-bottom: 5px; /* Ajuste para no tocar el borde físico */
+        }
 
         .input-field { 
-            width: 100%; padding: 18px; margin: 10px 0; 
+            width: 100%; padding: 18px; margin-bottom: 10px; 
             border-radius: 12px; border: none; background: #1a1a1a; 
             color: white; text-align: center; font-size: 1rem; box-sizing: border-box;
         }
 
-        /* BOTÓN ESTILO TECHNICS */
         .technics-btn {
             width: 100%; padding: 18px; border-radius: 4px; border: none;
             background: var(--tech-gray); color: #eee;
@@ -90,7 +96,7 @@
 
     <div id="sc-login" class="screen active">
         <div class="tt-logo" style="color:var(--accent)">HOLA!</div>
-        <div style="width: 100%; max-width: 280px;">
+        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; max-width: 280px;">
             <input type="text" id="n" class="input-field" placeholder="Nombre">
             <input type="text" id="m" class="input-field" placeholder="Mesa">
         </div>
@@ -124,10 +130,11 @@
         <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
             <button id="btn-p" class="radar-btn" onclick="pulsar()">ESPERA</button>
         </div>
-        <div style="height: 50px;"></div> 
+        <div style="height: 20px;"></div> 
     </div>
 
     <script>
+        // MANTÉN TU SCRIPT COMPLETO AQUÍ (No he tocado ninguna función)
         let myId = localStorage.getItem("tt_user_id") || ""; 
         let socket = new WebSocket('wss://tapapp.onrender.com/ws');
         let videoTrack = null, flashInt = null, wakeLock = null;
@@ -172,7 +179,7 @@
                     document.getElementById('now-playing-img').src = data.url;
                     document.getElementById('np-artist').innerText = data.artist || "ARTISTA DESCONOCIDO";
                     document.getElementById('np-track').innerText = data.track || "PISTA DESCONOCIDA";
-                    container.style.display = "flex"; // Usamos flex para el centrado
+                    container.style.display = "flex"; 
                 } else {
                     container.style.display = "none";
                 }
@@ -238,9 +245,7 @@
             const input = document.getElementById('msg-dj');
             const txt = input.value.trim();
             if(!txt) return;
-            
             socket.send(JSON.stringify({type: "chat", user_id: myId, text: txt }));
-            
             input.value = "";
             const btn = event.currentTarget;
             const btnText = btn.querySelector('#btn-dj-text') || btn;
@@ -249,7 +254,7 @@
             btn.style.background = "#2ecc71";
             setTimeout(() => {
                 btnText.innerText = originalText;
-                btn.style.background = ""; // Vuelve al color del CSS
+                btn.style.background = ""; 
             }, 2000);
         }
     </script>
