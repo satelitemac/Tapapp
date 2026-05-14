@@ -113,7 +113,7 @@ def fetch_data():
                 OPTIONAL MATCH (oc:Artist)-[tc:TAMBIEN_CANTO]->(son)
                 
                 RETURN son, r, 
-                       son.display_artist as titulo_original,  # 🟢 AQUÍ ESTÁ LA MAGIA INVISIBLE
+                       son.display_artist as titulo_original,
                        collect(DISTINCT a) as nodos_artistas,
                        r.estilos_discogs as estilos_oficiales,
                        l.name as sello,
