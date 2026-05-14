@@ -34,7 +34,6 @@ async def post_cover(data: CoverData):
 ARTNET_UNIVERSE = 0
 dmx_mode = False
 artnet_node = StupidArtnetServer()
-u0 = artnet_node.register_universe(ARTNET_UNIVERSE)
 main_loop = None
 
 def artnet_to_ws_bridge():
