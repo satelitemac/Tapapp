@@ -119,41 +119,25 @@
             if (myId) socket.send(JSON.stringify({type:"presence", user_id: myId}));
         };
 
-        async function init() {
-            const name = document.getElementById('n').value;
-            const mesa = document.getElementById('m').value;
-            if(!name || !mesa) return;
-            myId = `${name} (Mesa ${mesa})`;
-            localStorage.setItem("tt_user_id", myId);
-            showScreen('sc-wait');
-            setupHardware();
-            if(socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({type:"presence", user_id: myId}));
-        }
-
-        function hardReset() {
-            console.log("🧹 Hard Reset ejecutado.");
-            localStorage.removeItem("tt_user_id");
-            location.reload();
-        }
-
-        async function setupHardware() {
-            if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
-            try {
-                const s = await navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}});
-                videoTrack = s.getVideoTracks()[0];
-            } catch(e) { console.log("Sin linterna"); }
-        }
-
-        function pulsar() { socket.send(JSON.stringify({type:"player_click", user_id: myId})); }
-
+        // --- AQUÍ ESTÁ EL BLOQUE QUE TE FALTABA ---
         socket.onmessage = async (e) => {
             const data = JSON.parse(e.data);
             
+            // 1. LÓGICA DE CONTROL Y RESET
             if(data.action === "hard_reset") {
                 hardReset();
                 return;
             }
 
+            if(data.action === "reset") {
+                clearInterval(flashInt);
+                document.getElementById('flash-overlay').style.display = "none";
+                document.body.style.backgroundColor = "#000";
+                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
+                showScreen('sc-wait');
+            }
+
+            // 2. LÓGICA DE MÚSICA (PORTADAS)
             if(data.action === "update_cover") {
                 const container = document.getElementById('now-playing-container');
                 if(data.url && data.url !== "") {
@@ -164,6 +148,7 @@
                 } else { container.style.display = "none"; }
             }
 
+            // 3. LÓGICA DEL CONCURSO / RADAR
             if(data.action === "prepare_contest") {
                 showScreen('sc-radar');
                 const btn = document.getElementById('btn-p');
@@ -182,6 +167,7 @@
                 document.body.style.backgroundColor = win ? "#2ecc71" : "#8b0000";
             }
 
+            // 4. LÓGICA DE LINTERNAS MANUALES (ADMIN)
             if(data.action === "start_flashing") {
                 document.getElementById('flash-overlay').style.display = "block";
                 clearInterval(flashInt);
@@ -200,14 +186,54 @@
                 if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isWinner}]}).catch(()=>{});
             }
 
-            if(data.action === "reset") {
+            // 5. NUEVO: MODO DMX LIVE (RESOLUME / ART-NET)
+            if (data.action === "dmx_live") {
                 clearInterval(flashInt);
-                document.getElementById('flash-overlay').style.display = "none";
-                document.body.style.backgroundColor = "#000";
-                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
-                showScreen('sc-wait');
+                const overlay = document.getElementById('flash-overlay');
+                overlay.style.display = "block";
+                
+                if (overlay.style.backgroundColor !== data.color) {
+                    overlay.style.backgroundColor = data.color;
+                }
+                
+                if (videoTrack) {
+                    const settings = videoTrack.getConstraints();
+                    const currentTorch = settings.advanced ? settings.advanced[0].torch : false;
+                    if (currentTorch !== data.torch) {
+                        videoTrack.applyConstraints({
+                            advanced: [{ torch: data.torch }]
+                        }).catch(() => {});
+                    }
+                }
             }
-        };
+        }; 
+        // --- FIN DEL BLOQUE ONMESSAGE ---
+
+        async function init() {
+            const name = document.getElementById('n').value;
+            const mesa = document.getElementById('m').value;
+            if(!name || !mesa) return;
+            myId = `${name} (Mesa ${mesa})`;
+            localStorage.setItem("tt_user_id", myId);
+            showScreen('sc-wait');
+            setupHardware();
+            if(socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({type:"presence", user_id: myId}));
+        }
+
+        function hardReset() {
+            localStorage.removeItem("tt_user_id");
+            location.reload();
+        }
+
+        async function setupHardware() {
+            if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
+            try {
+                const s = await navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}});
+                videoTrack = s.getVideoTracks()[0];
+            } catch(e) { console.log("Sin linterna"); }
+        }
+
+        function pulsar() { socket.send(JSON.stringify({type:"player_click", user_id: myId})); }
 
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
