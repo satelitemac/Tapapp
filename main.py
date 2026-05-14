@@ -113,6 +113,7 @@ def fetch_data():
                 OPTIONAL MATCH (oc:Artist)-[tc:TAMBIEN_CANTO]->(son)
                 
                 RETURN son, r, 
+                       son.display_artist as titulo_original,  # 🟢 AQUÍ ESTÁ LA MAGIA INVISIBLE
                        collect(DISTINCT a) as nodos_artistas,
                        r.estilos_discogs as estilos_oficiales,
                        l.name as sello,
@@ -168,7 +169,7 @@ p = st.session_state.last_p
 
 if d:
     artistas = d['nodos_artistas']
-    nombres_display = " & ".join([a['name'] for a in artistas]).upper()
+    nombres_display = d.get('titulo_original', " & ".join([a['name'] for a in artistas])).upper()
     primer_art = artistas[0]
     
     if st.session_state.mapa_abierto:
