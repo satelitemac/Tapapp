@@ -83,7 +83,7 @@
     </div>
 
     <script>
-        const socket = new WebSocket('ws://localhost:8000/ws');
+        const socket = new WebSocket('wss://tapapp.onrender.com/ws');
         let activeUsers = new Set();
 
         function sendAction(action) {

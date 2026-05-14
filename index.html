@@ -121,92 +121,100 @@
 
         // --- AQUÍ ESTÁ EL BLOQUE QUE TE FALTABA ---
         socket.onmessage = async (e) => {
-            const data = JSON.parse(e.data);
-            
-            // 1. LÓGICA DE CONTROL Y RESET
-            if(data.action === "hard_reset") {
-                hardReset();
-                return;
-            }
+    const data = JSON.parse(e.data);
+    
+    // 1. MODO DMX LIVE (ESTO ES LO QUE VIENE DE RESOLUME)
+    // Lo ponemos arriba del todo para que sea lo más rápido posible
+    if (data.action === "dmx_live") {
+        // FILTRO: Si el mensaje tiene un dueño y no soy yo, lo ignoro
+        if (data.target_id && data.target_id !== myId) return;
 
-            if(data.action === "reset") {
-                clearInterval(flashInt);
-                document.getElementById('flash-overlay').style.display = "none";
-                document.body.style.backgroundColor = "#000";
-                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
-                showScreen('sc-wait');
+        clearInterval(flashInt); // Paramos cualquier parpadeo manual
+        const overlay = document.getElementById('flash-overlay');
+        overlay.style.display = "block";
+        
+        // Cambiamos el color solo si es distinto al que ya tenemos (ahorra batería)
+        if (overlay.style.backgroundColor !== data.color) {
+            overlay.style.backgroundColor = data.color;
+        }
+        
+        // Control inteligente de la linterna (Flash)
+        if (videoTrack) {
+            const settings = videoTrack.getConstraints();
+            const currentTorch = settings.advanced ? settings.advanced[0].torch : false;
+            // Solo mandamos la orden a la cámara si el estado ha cambiado
+            if (currentTorch !== data.torch) {
+                videoTrack.applyConstraints({
+                    advanced: [{ torch: data.torch }]
+                }).catch(() => {});
             }
+        }
+        return; // Salimos para procesar rápido el siguiente frame de luz
+    }
 
-            // 2. LÓGICA DE MÚSICA (PORTADAS)
-            if(data.action === "update_cover") {
-                const container = document.getElementById('now-playing-container');
-                if(data.url && data.url !== "") {
-                    document.getElementById('now-playing-img').src = data.url;
-                    document.getElementById('np-artist').innerText = data.artist || "ARTISTA";
-                    document.getElementById('np-track').innerText = data.track || "PISTA";
-                    container.style.display = "flex"; 
-                } else { container.style.display = "none"; }
-            }
+    // 2. LÓGICA DE CONTROL Y RESET
+    if(data.action === "hard_reset") {
+        hardReset();
+        return;
+    }
 
-            // 3. LÓGICA DEL CONCURSO / RADAR
-            if(data.action === "prepare_contest") {
-                showScreen('sc-radar');
-                const btn = document.getElementById('btn-p');
-                btn.disabled = true; btn.innerText = "ESPERA";
-                document.body.style.backgroundColor = "#000";
-            }
-            
-            if(data.action === "go_pulsar") {
-                const btn = document.getElementById('btn-p');
-                btn.disabled = false; btn.innerText = "¡DALE!";
-            }
+    if(data.action === "reset") {
+        clearInterval(flashInt);
+        document.getElementById('flash-overlay').style.display = "none";
+        document.body.style.backgroundColor = "#000";
+        if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
+        showScreen('sc-wait');
+    }
 
-            if(data.action === "winner_found") {
-                const win = data.winner_id === myId;
-                document.getElementById('btn-p').innerText = win ? "¡GANASTE!" : "CASI...";
-                document.body.style.backgroundColor = win ? "#2ecc71" : "#8b0000";
-            }
+    // 3. LÓGICA DE MÚSICA (PORTADAS)
+    if(data.action === "update_cover") {
+        const container = document.getElementById('now-playing-container');
+        if(data.url && data.url !== "") {
+            document.getElementById('now-playing-img').src = data.url;
+            document.getElementById('np-artist').innerText = data.artist || "ARTISTA";
+            document.getElementById('np-track').innerText = data.track || "PISTA";
+            container.style.display = "flex"; 
+        } else { container.style.display = "none"; }
+    }
 
-            // 4. LÓGICA DE LINTERNAS MANUALES (ADMIN)
-            if(data.action === "start_flashing") {
-                document.getElementById('flash-overlay').style.display = "block";
-                clearInterval(flashInt);
-                flashInt = setInterval(async () => {
-                    const overlay = document.getElementById('flash-overlay');
-                    const isBlack = overlay.style.backgroundColor === 'black' || overlay.style.backgroundColor === '';
-                    overlay.style.backgroundColor = isBlack ? (data.color || "#ffffff") : 'black';
-                    if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isBlack}]}).catch(()=>{});
-                }, 130);
-            }
+    // 4. LÓGICA DEL CONCURSO / RADAR
+    if(data.action === "prepare_contest") {
+        showScreen('sc-radar');
+        const btn = document.getElementById('btn-p');
+        btn.disabled = true; btn.innerText = "ESPERA";
+        document.body.style.backgroundColor = "#000";
+    }
+    
+    if(data.action === "go_pulsar") {
+        const btn = document.getElementById('btn-p');
+        btn.disabled = false; btn.innerText = "¡DALE!";
+    }
 
-            if(data.action === "stop_flashing") {
-                clearInterval(flashInt);
-                const isWinner = data.force_winner === myId;
-                document.getElementById('flash-overlay').style.backgroundColor = isWinner ? (data.color || "#ffffff") : "black";
-                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isWinner}]}).catch(()=>{});
-            }
+    if(data.action === "winner_found") {
+        const win = data.winner_id === myId;
+        document.getElementById('btn-p').innerText = win ? "¡GANASTE!" : "CASI...";
+        document.body.style.backgroundColor = win ? "#2ecc71" : "#8b0000";
+    }
 
-            // 5. NUEVO: MODO DMX LIVE (RESOLUME / ART-NET)
-            if (data.action === "dmx_live") {
-                clearInterval(flashInt);
-                const overlay = document.getElementById('flash-overlay');
-                overlay.style.display = "block";
-                
-                if (overlay.style.backgroundColor !== data.color) {
-                    overlay.style.backgroundColor = data.color;
-                }
-                
-                if (videoTrack) {
-                    const settings = videoTrack.getConstraints();
-                    const currentTorch = settings.advanced ? settings.advanced[0].torch : false;
-                    if (currentTorch !== data.torch) {
-                        videoTrack.applyConstraints({
-                            advanced: [{ torch: data.torch }]
-                        }).catch(() => {});
-                    }
-                }
-            }
-        }; 
+    // 5. LÓGICA DE LINTERNAS MANUALES (BOTONES DEL ADMIN)
+    if(data.action === "start_flashing") {
+        document.getElementById('flash-overlay').style.display = "block";
+        clearInterval(flashInt);
+        flashInt = setInterval(async () => {
+            const overlay = document.getElementById('flash-overlay');
+            const isBlack = overlay.style.backgroundColor === 'black' || overlay.style.backgroundColor === '';
+            overlay.style.backgroundColor = isBlack ? (data.color || "#ffffff") : 'black';
+            if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isBlack}]}).catch(()=>{});
+        }, 130);
+    }
+
+    if(data.action === "stop_flashing") {
+        clearInterval(flashInt);
+        const isWinner = data.force_winner === myId;
+        document.getElementById('flash-overlay').style.backgroundColor = isWinner ? (data.color || "#ffffff") : "black";
+        if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isWinner}]}).catch(()=>{});
+    }
+};
         // --- FIN DEL BLOQUE ONMESSAGE ---
 
         async function init() {
