@@ -8,11 +8,13 @@ from stupidArtnet import StupidArtnetServer
 
 app = FastAPI()
 
-# --- 1. MEMORIA DEL SISTEMA (LO QUE YA TENÍAS) ---
+# --- 1. MEMORIA DEL SISTEMA ---
 all_connections = set()
 active_users = {} 
+user_list = []      # Lista de nombres para el Radar y mapeo DMX
 winner_id = None
-user_list = [] # Nueva: necesaria para que Resolume sepa el orden de los móviles
+dmx_mode = False
+last_sent_states = {} # <--- ERROR 1 CORREGIDO: Definido aquí
 
 # --- 2. LÓGICA DE PORTADAS (STREAMLIT / RENDER.COM) ---
 class CoverData(BaseModel):
@@ -30,30 +32,34 @@ async def post_cover(data: CoverData):
     })
     return {"status": "ok"}
 
-# --- 3. NUEVO: PUENTE ART-NET (RESOLUME) ---
+# --- 3. PUENTE ART-NET (RESOLUME) ---
 ARTNET_UNIVERSE = 0
-dmx_mode = False
 artnet_node = StupidArtnetServer()
 main_loop = None
 
 def artnet_to_ws_bridge():
-    """Hilo independiente para las luces"""
-    global dmx_mode, main_loop
+    global dmx_mode, main_loop, last_sent_states # <--- ERROR 2 CORREGIDO: Añadido a global
     while True:
         if dmx_mode and main_loop and len(user_list) > 0:
             buffer = artnet_node.get_buffer(ARTNET_UNIVERSE)
-            for i, u_id in enumerate(user_list):
-                base_ch = i * 3
-                if base_ch + 2 < len(buffer):
-                    r, g, b = buffer[base_ch], buffer[base_ch+1], buffer[base_ch+2]
-                    color_hex = f"#{r:02x}{g:02x}{b:02x}"
-                    # Encendemos flash si el brillo promedio es alto
-                    torch_on = (r + g + b) > 380 
-                    
-                    msg = json.dumps({"action": "dmx_live", "color": color_hex, "torch": torch_on})
-                    ws = active_users.get(u_id)
-                    if ws:
-                        asyncio.run_coroutine_threadsafe(ws.send_text(msg), main_loop)
+            
+            if len(buffer) >= 3:
+                for i, u_id in enumerate(user_list):
+                    base_ch = i * 3
+                    if base_ch + 2 < len(buffer):
+                        r, g, b = buffer[base_ch], buffer[base_ch+1], buffer[base_ch+2]
+                        color_hex = f"#{r:02x}{g:02x}{b:02x}"
+                        torch_on = (r + g + b) > 380 
+                        
+                        # --- DIRTY CHECK: Solo enviamos si el estado cambia ---
+                        current_state = (color_hex, torch_on)
+                        if last_sent_states.get(u_id) != current_state:
+                            msg = json.dumps({"action": "dmx_live", "color": color_hex, "torch": torch_on})
+                            ws = active_users.get(u_id)
+                            if ws:
+                                asyncio.run_coroutine_threadsafe(ws.send_text(msg), main_loop)
+                            last_sent_states[u_id] = current_state
+                        
         time.sleep(0.04) # 25 FPS
 
 @app.on_event("startup")
@@ -76,11 +82,12 @@ async def websocket_endpoint(websocket: WebSocket):
             message = json.loads(raw_data)
             u_id = message.get("user_id")
             
-            # Registro de usuario (Radar)
-            if u_id and u_id != "ADMIN_PANEL" and current_id is None:
+            # Gestión de Presencia Mejorada
+            if message.get("type") == "presence":
                 current_id = u_id
                 active_users[u_id] = websocket
-                if u_id not in user_list:
+                # Solo añadimos a la lista de DMX/Radar si no es el Admin
+                if u_id != "ADMIN_PANEL" and u_id not in user_list:
                     user_list.append(u_id)
                 await broadcast_users()
 
@@ -95,6 +102,8 @@ async def websocket_endpoint(websocket: WebSocket):
             # Control DMX desde Admin
             elif message.get("action") == "toggle_dmx":
                 dmx_mode = message.get("value", False)
+                if not dmx_mode:
+                    last_sent_states.clear() # Limpiamos memoria al apagar
                 print(f"📡 MODO DMX: {dmx_mode}")
             
             # Lógica de Admin (Resets, etc) y Chat
@@ -104,19 +113,20 @@ async def websocket_endpoint(websocket: WebSocket):
                 await broadcast(message)
 
     except WebSocketDisconnect:
-        all_connections.remove(websocket)
+        if websocket in all_connections:
+            all_connections.remove(websocket)
         if current_id in active_users:
             del active_users[current_id]
-            if current_id in user_list:
-                user_list.remove(current_id)
-            await broadcast_users()
+        if current_id in user_list:
+            user_list.remove(current_id)
+        if current_id in last_sent_states:
+            del last_sent_states[current_id]
+        await broadcast_users()
 
 async def broadcast_users():
-    """Mantiene la lista de nombres actualizada para el Radar"""
     await broadcast({"action": "update_users", "users": user_list})
 
 async def broadcast(message: dict):
-    """Envía a todos (incluido Render.com y Admin)"""
     msg_str = json.dumps(message)
     for ws in list(all_connections):
         try:
