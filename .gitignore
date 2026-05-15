@@ -15,3 +15,7 @@ fix_disco copy.py
 index copy 2.html
 index copy.html
 server copy.py
+pyartnet_test.py
+monitor.py
+bridge_dmx.py
+bridge_dmx.py

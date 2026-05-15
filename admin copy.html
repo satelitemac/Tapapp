@@ -6,14 +6,13 @@
     <title>T&T | COMMAND CENTER</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@900&family=Space+Mono&display=swap" rel="stylesheet">
     <style>
-        :root { --accent: #ff5e00; --bg: #0a0a0a; --panel: #151515; --light: #ffcc00; --dj: #00d4ff; --dmx: #a200ff; --bpm: #00ff88; }
+        :root { --accent: #ff5e00; --bg: #0a0a0a; --panel: #151515; --light: #ffcc00; --dj: #00d4ff; --dmx: #a200ff; }
         body { margin: 0; background: var(--bg); color: white; font-family: 'Inter', sans-serif; padding: 20px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1000px; margin: 0 auto; }
         .panel { background: var(--panel); border-radius: 16px; padding: 25px; border: 1px solid #222; }
         h2 { color: var(--accent); font-size: 0.9rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;}
         .controls { display: flex; flex-direction: column; gap: 12px; }
         .btn { padding: 18px; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; text-transform: uppercase; transition: all 0.2s; font-family: 'Inter'; }
-        
         .btn-prep { background: #444; color: white; }
         .btn-go { background: #2ecc71; color: white; }
         .btn-flash { background: var(--light); color: black; }
@@ -22,12 +21,6 @@
         .btn-dmx-off { background: transparent; color: white; border: 1px solid #444; }
         .btn-reset { background: transparent; color: #e74c3c; border: 1px solid #e74c3c; margin-top: 10px; font-size: 0.8rem; }
         .btn-nuke { background: #8b0000; color: white; padding: 5px 10px; font-size: 0.7rem; border-radius: 5px; border: none; cursor: pointer; }
-        
-        /* Estilos para el TAP TEMPO */
-        .btn-tap { background: var(--bpm); color: black; height: 80px; font-size: 1.5rem; }
-        .btn-tap:active { transform: scale(0.95); filter: brightness(1.2); }
-        .bpm-display { font-family: 'Space Mono'; color: var(--bpm); font-size: 2rem; text-align: center; margin-bottom: 10px; }
-
         #user-list { background: #000; border-radius: 8px; padding: 10px; font-family: 'Space Mono'; font-size: 0.75rem; color: #888; height: 100px; overflow-y: auto; border: 1px solid #222; }
         #ganador-actual { background: #000; border-radius: 10px; padding: 15px; margin-top: 10px; text-align: center; color: #2ecc71; font-weight: 900; border: 2px dashed #333; }
         #chat-box { height: 150px; overflow-y: auto; background: #000; padding: 15px; font-family: 'Space Mono', monospace; font-size: 0.85rem; border: 1px solid #333; border-radius: 8px; display: flex; flex-direction: column-reverse; }
@@ -60,23 +53,17 @@
             </div>
         </div>
 
-        <div class="panel" style="grid-column: span 1; border: 1px solid var(--bpm);">
-            <h2><span>🥁 RITMO (BPM)</span></h2>
-            <div class="bpm-display" id="bpm-val">000</div>
-            <button class="btn btn-tap" style="width: 100%" onclick="tapBPM()">TAP TEMPO</button>
-        </div>
-
-        <div class="panel" style="grid-column: span 1; border: 1px solid var(--dmx);">
+        <div class="panel" style="grid-column: span 2; border: 1px solid var(--dmx);">
             <h2>
-                <span>🎵 MODO ART-NET</span>
+                <span>🎵 MODO SHOW (ART-NET / RESOLUME)</span>
                 <span id="dmx-status" class="status-off">OFF</span>
             </h2>
-            <div class="controls" style="flex-direction: row;">
-                <button class="btn btn-dmx-on" style="flex:1" onclick="toggleDMX(true)">ON</button>
-                <button class="btn btn-dmx-off" style="flex:1" onclick="toggleDMX(false)">OFF</button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <button class="btn btn-dmx-on" onclick="toggleDMX(true)">ACTIVAR CONTROL LIVE</button>
+                <button class="btn btn-dmx-off" onclick="toggleDMX(false)">DESACTIVAR</button>
             </div>
-            <p style="font-size: 0.6rem; color: #666; margin-top: 10px; font-family: 'Space Mono'; text-align: center;">
-                Puerto: 6454 | Univ: 0
+            <p style="font-size: 0.7rem; color: #666; margin-top: 10px; font-family: 'Space Mono'; text-align: center;">
+                Puerto: 6454 | Universo: 0 | Mapeo: 3 Ch/User (RGB)
             </p>
         </div>
 
@@ -98,52 +85,6 @@
     <script>
         const socket = new WebSocket('wss://tapapp.onrender.com/ws');
         let activeUsers = new Set();
-        
-        // Variables para el TAP TEMPO
-        let tapTimes = [];
-        let lastTap = 0;
-        let currentBPM = 0;
-
-        function tapBPM() {
-            const now = Date.now();
-            
-            // Si pasa más de 2 segundos entre taps, reiniciamos la cuenta
-            if (now - lastTap > 2000) {
-                tapTimes = [];
-            }
-            
-            lastTap = now;
-            tapTimes.push(now);
-
-            if (tapTimes.length > 1) {
-                // Solo guardamos los últimos 4 intervalos para que sea reactivo
-                if (tapTimes.length > 5) tapTimes.shift();
-                
-                let intervals = [];
-                for (let i = 1; i < tapTimes.length; i++) {
-                    intervals.push(tapTimes[i] - tapTimes[i-1]);
-                }
-                
-                const avgInterval = intervals.reduce((a, b) => a + b) / intervals.length;
-                currentBPM = Math.round(60000 / avgInterval);
-                
-                document.getElementById('bpm-val').innerText = currentBPM.toString().padStart(3, '0');
-                
-                // Enviamos el BPM al servidor para que los móviles lo sepan
-                sendBPM(currentBPM);
-            }
-        }
-
-        function sendBPM(bpm) {
-            if (socket.readyState === 1) {
-                socket.send(JSON.stringify({
-                    "type": "admin_action",
-                    "action": "set_bpm",
-                    "bpm": bpm,
-                    "user_id": "ADMIN_PANEL"
-                }));
-            }
-        }
 
         function sendAction(action) {
             const color = document.getElementById('action-color').value;
@@ -166,6 +107,7 @@
             }
         }
 
+        // NUEVA FUNCIÓN PARA EL MODO DMX
         function toggleDMX(state) {
             if (socket.readyState === 1) {
                 socket.send(JSON.stringify({
@@ -173,6 +115,7 @@
                     "value": state
                 }));
                 
+                // Actualizar UI localmente
                 const status = document.getElementById('dmx-status');
                 status.innerText = state ? "ON" : "OFF";
                 status.className = state ? "status-on" : "status-off";
@@ -181,17 +124,21 @@
 
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
+
             if (data.action === "update_users") {
                 activeUsers = new Set(data.users);
                 updateUI();
             }
+
             if (data.action === "winner_found" || data.action === "light_winner_found" || (data.action === "stop_flashing" && data.force_winner)) {
                 const winnerName = data.winner_id || data.force_winner;
                 document.getElementById('ganador-actual').innerText = "🏆 " + winnerName;
             }
+
             if (data.action === "reset") {
                 document.getElementById('ganador-actual').innerText = "ESPERANDO...";
             }
+
             if (data.type === "chat") {
                 const box = document.getElementById('chat-box');
                 const msg = document.createElement('div');
