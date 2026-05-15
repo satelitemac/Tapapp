@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>T&T | EVENT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --accent: #ff5e00; --tech-gray: #1a1a1a; }
+
+        body, html { 
+            margin: 0; padding: 0; height: 100%; width: 100%; 
+            background: #000; color: white; font-family: 'Inter', sans-serif; overflow: hidden; 
+        }
+
+        .screen { 
+            display: none; 
+            height: 100vh; 
+            width: 100%; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            text-align: center;
+            box-sizing: border-box;
+            padding: 20px;
+        }
+        .active { display: flex; z-index: 10; }
+
+        .tt-logo {
+            font-weight: 900; font-size: 2.2rem; 
+            letter-spacing: -1px; text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        #sc-wait.active {
+            justify-content: space-between;
+            padding-top: 40px;
+            padding-bottom: calc(30px + env(safe-area-inset-bottom));
+        }
+
+        #now-playing-container { 
+            flex: 1; display: flex; flex-direction: column; justify-content: center;
+            width: 100%; max-width: 280px; min-height: 0;
+        }
+        #now-playing-img { 
+            width: 100%; aspect-ratio: 1/1; border-radius: 12px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: cover;
+        }
+
+        .controls-area { width: 100%; max-width: 300px; }
+        .input-field { width: 100%; padding: 18px; margin-bottom: 10px; border-radius: 12px; border: none; background: #1a1a1a; color: white; text-align: center; font-size: 1rem; box-sizing: border-box; }
+        
+        .technics-btn { 
+            width: 100%; padding: 18px; border-radius: 4px; border: none; background: var(--tech-gray); color: #eee; 
+            font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px;
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.1), 0px 5px 0px #000;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .technics-btn:active { transform: translateY(3px); box-shadow: 0px 2px 0px #000; color: #00d4ff; }
+        .technics-label { font-size: 0.45rem; margin-top: 4px; opacity: 0.5; letter-spacing: 3px; }
+
+        .radar-btn { 
+            width: 220px; height: 220px; border-radius: 50%; border: 10px solid white; 
+            background: none; color: white; font-size: 1.8rem; font-weight: 900;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        #flash-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:none; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="flash-overlay"></div>
+
+    <div id="sc-login" class="screen active">
+        <div class="tt-logo" style="color:var(--accent)">HOLA!</div>
+        <div class="controls-area">
+            <input type="text" id="n" class="input-field" placeholder="Nombre">
+            <input type="text" id="m" class="input-field" placeholder="Mesa">
+            <button class="technics-btn" onclick="init()" style="background: var(--accent); border-radius: 15px; box-shadow: none; padding: 20px;">ENTRAR</button>
+        </div>
+    </div>
+
+    <div id="sc-wait" class="screen">
+        <div class="tt-logo">TAPES & TAPAS</div>
+        <div id="now-playing-container" style="display: none;">
+            <div style="margin-bottom: 10px; text-align: center;">
+                <p id="np-artist" style="color: var(--accent); font-weight: 900; margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px;"></p>
+                <p id="np-track" style="color: white; font-weight: 800; margin: 5px 0 10px 0; font-size: 1.1rem; text-transform: uppercase;"></p>
+            </div>
+            <img id="now-playing-img" src="">
+        </div>
+        <div class="controls-area">
+            <input type="text" id="msg-dj" class="input-field" placeholder="¿Alguna petición?">
+            <button class="technics-btn" onclick="sendDJ(event)">
+                <span id="btn-dj-text">ENVIAR AL DJ</span>
+                <span class="technics-label">START · STOP</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="sc-radar" class="screen">
+        <div class="tt-logo" style="position: absolute; top: 15%;">¡NOT YET!</div>
+        <button id="btn-p" class="radar-btn" onclick="pulsar()">ESPERA</button>
+    </div>
+
+    <script>
+        let myId = localStorage.getItem("tt_user_id") || ""; 
+        let socket = new WebSocket('wss://tapapp.onrender.com/ws');
+        let videoTrack = null, flashInt = null, wakeLock = null;
+        
+        // --- VARIABLES NUEVAS PARA EL BPM ---
+        let currentFlashSpeed = 130; // Velocidad por defecto en ms
+        let isFlashing = false;      // Estado para saber si estamos parpadeando
+        let lastColor = "#ffffff";   // Memoria del último color seleccionado
+
+        window.onload = () => {
+            if (myId) { showScreen('sc-wait'); setupHardware(); } 
+            else { showScreen('sc-login'); }
+        };
+
+        socket.onopen = () => {
+            if (myId) socket.send(JSON.stringify({type:"presence", user_id: myId}));
+        };
+
+        // Función auxiliar para reiniciar el bucle de luces con la nueva velocidad
+        function startFlashingLoop() {
+            clearInterval(flashInt);
+            flashInt = setInterval(async () => {
+                const overlay = document.getElementById('flash-overlay');
+                const isBlack = overlay.style.backgroundColor === 'black' || overlay.style.backgroundColor === '';
+                overlay.style.backgroundColor = isBlack ? lastColor : 'black';
+                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isBlack}]}).catch(()=>{});
+            }, currentFlashSpeed);
+        }
+
+        socket.onmessage = async (e) => {
+            const data = JSON.parse(e.data);
+            
+            // 1. MODO DMX LIVE
+            if (data.action === "dmx_live") {
+                if (data.target_id && data.target_id !== myId) return;
+
+                isFlashing = false; // El DMX cancela el modo manual
+                clearInterval(flashInt);
+                const overlay = document.getElementById('flash-overlay');
+                overlay.style.display = "block";
+                
+                if (overlay.style.backgroundColor !== data.color) {
+                    overlay.style.backgroundColor = data.color;
+                }
+                
+                if (videoTrack) {
+                    const settings = videoTrack.getConstraints();
+                    const currentTorch = settings.advanced ? settings.advanced[0].torch : false;
+                    if (currentTorch !== data.torch) {
+                        videoTrack.applyConstraints({
+                            advanced: [{ torch: data.torch }]
+                        }).catch(() => {});
+                    }
+                }
+                return; 
+            }
+
+            // 2. RECEPCIÓN DE BPM (NUEVO)
+            if (data.action === "set_bpm") {
+                // Calculamos los milisegundos por pulso (Mitad del beat para encender, mitad para apagar)
+                currentFlashSpeed = Math.round((60000 / data.bpm) / 2);
+                
+                // Si la luz ya estaba encendida parpadeando, aplicamos la nueva velocidad al instante
+                if (isFlashing) {
+                    startFlashingLoop();
+                }
+            }
+
+            // 3. LÓGICA DE CONTROL Y RESET
+            if(data.action === "hard_reset") {
+                hardReset();
+                return;
+            }
+
+            if(data.action === "reset") {
+                isFlashing = false;
+                clearInterval(flashInt);
+                document.getElementById('flash-overlay').style.display = "none";
+                document.body.style.backgroundColor = "#000";
+                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
+                showScreen('sc-wait');
+            }
+
+            // 4. LÓGICA DE MÚSICA
+            if(data.action === "update_cover") {
+                const container = document.getElementById('now-playing-container');
+                if(data.url && data.url !== "") {
+                    document.getElementById('now-playing-img').src = data.url;
+                    document.getElementById('np-artist').innerText = data.artist || "ARTISTA";
+                    document.getElementById('np-track').innerText = data.track || "PISTA";
+                    container.style.display = "flex"; 
+                } else { container.style.display = "none"; }
+            }
+
+            // 5. LÓGICA DEL RADAR
+            if(data.action === "prepare_contest") {
+                showScreen('sc-radar');
+                const btn = document.getElementById('btn-p');
+                btn.disabled = true; btn.innerText = "ESPERA";
+                document.body.style.backgroundColor = "#000";
+            }
+            
+            if(data.action === "go_pulsar") {
+                const btn = document.getElementById('btn-p');
+                btn.disabled = false; btn.innerText = "¡PUUSH!";
+            }
+
+            if(data.action === "winner_found") {
+                const win = data.winner_id === myId;
+                document.getElementById('btn-p').innerText = win ? "¡GANASTE!" : "CASI...";
+                document.body.style.backgroundColor = win ? "#2ecc71" : "#8b0000";
+            }
+
+            // 6. LÓGICA DE LINTERNAS MANUALES
+            if(data.action === "start_flashing") {
+                isFlashing = true;
+                lastColor = data.color || "#ffffff";
+                document.getElementById('flash-overlay').style.display = "block";
+                startFlashingLoop(); // Llama a la función que usa la velocidad actual
+            }
+
+            if(data.action === "stop_flashing") {
+                isFlashing = false;
+                clearInterval(flashInt);
+                const isWinner = data.force_winner === myId;
+                document.getElementById('flash-overlay').style.backgroundColor = isWinner ? (data.color || "#ffffff") : "black";
+                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isWinner}]}).catch(()=>{});
+            }
+        };
+
+        async function init() {
+            const name = document.getElementById('n').value;
+            const mesa = document.getElementById('m').value;
+            if(!name || !mesa) return;
+            myId = `${name} (Mesa ${mesa})`;
+            localStorage.setItem("tt_user_id", myId);
+            showScreen('sc-wait');
+            setupHardware();
+            if(socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({type:"presence", user_id: myId}));
+        }
+
+        function hardReset() {
+            localStorage.removeItem("tt_user_id");
+            location.reload();
+        }
+
+        async function setupHardware() {
+            if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
+            try {
+                const s = await navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}});
+                videoTrack = s.getVideoTracks()[0];
+            } catch(e) { console.log("Sin linterna"); }
+        }
+
+        function pulsar() { socket.send(JSON.stringify({type:"player_click", user_id: myId})); }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        setInterval(() => { if(socket.readyState === 1) socket.send(JSON.stringify({type:"ping"})); }, 20000);
+
+        function sendDJ(event) {
+            const input = document.getElementById('msg-dj');
+            const txt = input.value.trim();
+            if(!txt) return;
+            socket.send(JSON.stringify({type: "chat", user_id: myId, text: txt }));
+            input.value = "";
+            const btnText = document.getElementById('btn-dj-text');
+            const originalText = btnText.innerText;
+            btnText.innerText = "¡ENVIADO!";
+            setTimeout(() => { btnText.innerText = originalText; }, 2000);
+        }
+    </script>
+</body>
+</html>

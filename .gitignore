@@ -1,0 +1,22 @@
+.venv/
+__pycache__/
+.DS_Store
+vj_mac_bridge.py
+test_api.py
+test_lastfm.py
+test_spotify.py
+Visuals copy.py
+Visuals.py
+vj_mac_bridge copy.py
+neo4j_query_table_data_2026-4-4.json
+main copy.py
+fix_disco.py
+fix_disco copy.py
+index copy 2.html
+index copy.html
+server copy.py
+pyartnet_test.py
+monitor.py
+bridge_dmx.py
+bridge_dmx.py
+admin copy.html
