@@ -104,180 +104,164 @@
     </div>
 
     <script>
-        let myId = localStorage.getItem("tt_user_id") || ""; 
-        let socket = new WebSocket('wss://tapapp.onrender.com/ws');
-        let videoTrack = null, flashInt = null, wakeLock = null;
+    let myId = localStorage.getItem("tt_user_id") || ""; 
+    let socket = new WebSocket('wss://tapapp.onrender.com/ws');
+    let videoTrack = null, flashInt = null, wakeLock = null;
+    
+    let currentFlashSpeed = 130; 
+    let isFlashing = false;      
+    let lastColor = "#ffffff";   
+
+    window.onload = () => {
+        // 1. Lógica de sesión
+        if (myId) { 
+            showScreen('sc-wait'); 
+            setupHardware(); 
+        } else { 
+            showScreen('sc-login'); 
+        }
+
+        // 2. DESPERTADOR INVISIBLE (Sincronización inicial)
+        // Esto fuerza a que Render nos mande la portada actual al entrar
+        fetch('https://tapapp.onrender.com/current_status')
+            .then(() => console.log("Servidor despertado"))
+            .catch(err => console.log("Error al despertar:", err));
+    };
+
+    socket.onopen = () => {
+        if (myId) socket.send(JSON.stringify({type:"presence", user_id: myId}));
+    };
+
+    function startFlashingLoop() {
+        clearInterval(flashInt);
+        flashInt = setInterval(async () => {
+            const overlay = document.getElementById('flash-overlay');
+            const isBlack = overlay.style.backgroundColor === 'black' || overlay.style.backgroundColor === '';
+            overlay.style.backgroundColor = isBlack ? lastColor : 'black';
+            if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isBlack}]}).catch(()=>{});
+        }, currentFlashSpeed);
+    }
+
+    socket.onmessage = async (e) => {
+        const data = JSON.parse(e.data);
         
-        // --- VARIABLES NUEVAS PARA EL BPM ---
-        let currentFlashSpeed = 130; // Velocidad por defecto en ms
-        let isFlashing = false;      // Estado para saber si estamos parpadeando
-        let lastColor = "#ffffff";   // Memoria del último color seleccionado
-
-        window.onload = () => {
-            if (myId) { showScreen('sc-wait'); setupHardware(); } 
-            else { showScreen('sc-login'); }
-        };
-
-        socket.onopen = () => {
-            if (myId) socket.send(JSON.stringify({type:"presence", user_id: myId}));
-        };
-
-        // Función auxiliar para reiniciar el bucle de luces con la nueva velocidad
-        function startFlashingLoop() {
+        if (data.action === "dmx_live") {
+            if (data.target_id && data.target_id !== myId) return;
+            isFlashing = false; 
             clearInterval(flashInt);
-            flashInt = setInterval(async () => {
-                const overlay = document.getElementById('flash-overlay');
-                const isBlack = overlay.style.backgroundColor === 'black' || overlay.style.backgroundColor === '';
-                overlay.style.backgroundColor = isBlack ? lastColor : 'black';
-                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isBlack}]}).catch(()=>{});
-            }, currentFlashSpeed);
+            const overlay = document.getElementById('flash-overlay');
+            overlay.style.display = "block";
+            if (overlay.style.backgroundColor !== data.color) overlay.style.backgroundColor = data.color;
+            if (videoTrack) {
+                videoTrack.applyConstraints({advanced: [{ torch: data.torch }]}).catch(() => {});
+            }
+            return; 
         }
 
-        socket.onmessage = async (e) => {
-            const data = JSON.parse(e.data);
-            
-            // 1. MODO DMX LIVE
-            if (data.action === "dmx_live") {
-                if (data.target_id && data.target_id !== myId) return;
+        if (data.action === "set_bpm") {
+            currentFlashSpeed = Math.round((60000 / data.bpm) / 2);
+            if (isFlashing) startFlashingLoop();
+        }
 
-                isFlashing = false; // El DMX cancela el modo manual
-                clearInterval(flashInt);
-                const overlay = document.getElementById('flash-overlay');
-                overlay.style.display = "block";
-                
-                if (overlay.style.backgroundColor !== data.color) {
-                    overlay.style.backgroundColor = data.color;
-                }
-                
-                if (videoTrack) {
-                    const settings = videoTrack.getConstraints();
-                    const currentTorch = settings.advanced ? settings.advanced[0].torch : false;
-                    if (currentTorch !== data.torch) {
-                        videoTrack.applyConstraints({
-                            advanced: [{ torch: data.torch }]
-                        }).catch(() => {});
-                    }
-                }
-                return; 
-            }
+        if(data.action === "hard_reset") { hardReset(); return; }
 
-            // 2. RECEPCIÓN DE BPM (NUEVO)
-            if (data.action === "set_bpm") {
-                // Calculamos los milisegundos por pulso (Mitad del beat para encender, mitad para apagar)
-                currentFlashSpeed = Math.round((60000 / data.bpm) / 2);
-                
-                // Si la luz ya estaba encendida parpadeando, aplicamos la nueva velocidad al instante
-                if (isFlashing) {
-                    startFlashingLoop();
-                }
-            }
-
-            // 3. LÓGICA DE CONTROL Y RESET
-            if(data.action === "hard_reset") {
-                hardReset();
-                return;
-            }
-
-            if(data.action === "reset") {
-                isFlashing = false;
-                clearInterval(flashInt);
-                document.getElementById('flash-overlay').style.display = "none";
-                document.body.style.backgroundColor = "#000";
-                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
-                showScreen('sc-wait');
-            }
-
-            // 4. LÓGICA DE MÚSICA
-            if(data.action === "update_cover") {
-                const container = document.getElementById('now-playing-container');
-                if(data.url && data.url !== "") {
-                    document.getElementById('now-playing-img').src = data.url;
-                    document.getElementById('np-artist').innerText = data.artist || "ARTISTA";
-                    document.getElementById('np-track').innerText = data.track || "PISTA";
-                    container.style.display = "flex"; 
-                } else { container.style.display = "none"; }
-            }
-
-            // 5. LÓGICA DEL RADAR
-            if(data.action === "prepare_contest") {
-                showScreen('sc-radar');
-                const btn = document.getElementById('btn-p');
-                btn.disabled = true; btn.innerText = "ESPERA";
-                document.body.style.backgroundColor = "#000";
-            }
-            
-            if(data.action === "go_pulsar") {
-                const btn = document.getElementById('btn-p');
-                btn.disabled = false; btn.innerText = "¡PUSH!";
-            }
-
-            if(data.action === "winner_found") {
-                const win = data.winner_id === myId;
-                document.getElementById('btn-p').innerText = win ? "¡GANASTE!" : "CASI...";
-                document.body.style.backgroundColor = win ? "#2ecc71" : "#8b0000";
-            }
-
-            // 6. LÓGICA DE LINTERNAS MANUALES
-            if(data.action === "start_flashing") {
-                isFlashing = true;
-                lastColor = data.color || "#ffffff";
-                document.getElementById('flash-overlay').style.display = "block";
-                startFlashingLoop(); // Llama a la función que usa la velocidad actual
-            }
-
-            if(data.action === "stop_flashing") {
-                isFlashing = false;
-                clearInterval(flashInt);
-                const isWinner = data.force_winner === myId;
-                document.getElementById('flash-overlay').style.backgroundColor = isWinner ? (data.color || "#ffffff") : "black";
-                if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isWinner}]}).catch(()=>{});
-            }
-        };
-
-        async function init() {
-            const name = document.getElementById('n').value;
-            const mesa = document.getElementById('m').value;
-            if(!name || !mesa) return;
-            myId = `${name} (Mesa ${mesa})`;
-            localStorage.setItem("tt_user_id", myId);
+        if(data.action === "reset") {
+            isFlashing = false;
+            clearInterval(flashInt);
+            document.getElementById('flash-overlay').style.display = "none";
+            document.body.style.backgroundColor = "#000";
+            if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
             showScreen('sc-wait');
-            setupHardware();
-            if(socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({type:"presence", user_id: myId}));
         }
 
-        function hardReset() {
-            localStorage.removeItem("tt_user_id");
-            location.reload();
+        if(data.action === "update_cover") {
+            const container = document.getElementById('now-playing-container');
+            if(data.url && data.url !== "") {
+                document.getElementById('now-playing-img').src = data.url;
+                document.getElementById('np-artist').innerText = data.artist || "ARTISTA";
+                document.getElementById('np-track').innerText = data.track || "PISTA";
+                container.style.display = "flex"; 
+            } else { container.style.display = "none"; }
         }
 
-        async function setupHardware() {
-            if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
-            try {
-                const s = await navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}});
-                videoTrack = s.getVideoTracks()[0];
-            } catch(e) { console.log("Sin linterna"); }
+        if(data.action === "prepare_contest") {
+            showScreen('sc-radar');
+            const btn = document.getElementById('btn-p');
+            btn.disabled = true; btn.innerText = "ESPERA";
+            document.body.style.backgroundColor = "#000";
+        }
+        
+        if(data.action === "go_pulsar") {
+            const btn = document.getElementById('btn-p');
+            btn.disabled = false; btn.innerText = "¡PUSH!";
         }
 
-        function pulsar() { socket.send(JSON.stringify({type:"player_click", user_id: myId})); }
-
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+        if(data.action === "winner_found") {
+            const win = data.winner_id === myId;
+            document.getElementById('btn-p').innerText = win ? "¡GANASTE!" : "CASI...";
+            document.body.style.backgroundColor = win ? "#2ecc71" : "#8b0000";
         }
 
-        setInterval(() => { if(socket.readyState === 1) socket.send(JSON.stringify({type:"ping"})); }, 20000);
-
-        function sendDJ(event) {
-            const input = document.getElementById('msg-dj');
-            const txt = input.value.trim();
-            if(!txt) return;
-            socket.send(JSON.stringify({type: "chat", user_id: myId, text: txt }));
-            input.value = "";
-            const btnText = document.getElementById('btn-dj-text');
-            const originalText = btnText.innerText;
-            btnText.innerText = "¡ENVIADO!";
-            setTimeout(() => { btnText.innerText = originalText; }, 2000);
+        if(data.action === "start_flashing") {
+            isFlashing = true;
+            lastColor = data.color || "#ffffff";
+            document.getElementById('flash-overlay').style.display = "block";
+            startFlashingLoop(); 
         }
-    </script>
+
+        if(data.action === "stop_flashing") {
+            isFlashing = false;
+            clearInterval(flashInt);
+            const isWinner = data.force_winner === myId;
+            document.getElementById('flash-overlay').style.backgroundColor = isWinner ? (data.color || "#ffffff") : "black";
+            if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: isWinner}]}).catch(()=>{});
+        }
+    };
+
+    async function init() {
+        const name = document.getElementById('n').value;
+        const mesa = document.getElementById('m').value;
+        if(!name || !mesa) return;
+        myId = `${name} (Mesa ${mesa})`;
+        localStorage.setItem("tt_user_id", myId);
+        showScreen('sc-wait');
+        setupHardware();
+        if(socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({type:"presence", user_id: myId}));
+    }
+
+    function hardReset() {
+        localStorage.removeItem("tt_user_id");
+        location.reload();
+    }
+
+    async function setupHardware() {
+        if ('wakeLock' in navigator) { try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){} }
+        try {
+            const s = await navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}});
+            videoTrack = s.getVideoTracks()[0];
+        } catch(e) { console.log("Sin linterna"); }
+    }
+
+    function pulsar() { socket.send(JSON.stringify({type:"player_click", user_id: myId})); }
+
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    setInterval(() => { if(socket.readyState === 1) socket.send(JSON.stringify({type:"ping"})); }, 20000);
+
+    function sendDJ(event) {
+        const input = document.getElementById('msg-dj');
+        const txt = input.value.trim();
+        if(!txt) return;
+        socket.send(JSON.stringify({type: "chat", user_id: myId, text: txt }));
+        input.value = "";
+        const btnText = document.getElementById('btn-dj-text');
+        const originalText = btnText.innerText;
+        btnText.innerText = "¡ENVIADO!";
+        setTimeout(() => { btnText.innerText = originalText; }, 2000);
+    }
+</script>
 </body>
 </html>
