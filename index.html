@@ -99,7 +99,7 @@
     </div>
 
     <div id="sc-radar" class="screen">
-        <div class="tt-logo" style="position: absolute; top: 15%;">¡NOT YET!</div>
+        <div class="tt-logo" style="position: absolute; top: 15%;">¡ATENCION!</div>
         <button id="btn-p" class="radar-btn" onclick="pulsar()">ESPERA</button>
     </div>
 
@@ -208,7 +208,7 @@
             
             if(data.action === "go_pulsar") {
                 const btn = document.getElementById('btn-p');
-                btn.disabled = false; btn.innerText = "¡PUUSH!";
+                btn.disabled = false; btn.innerText = "¡PUSH!";
             }
 
             if(data.action === "winner_found") {
