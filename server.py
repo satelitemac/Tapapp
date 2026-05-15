@@ -16,6 +16,13 @@ winner_id = None
 dmx_mode = False
 last_sent_states = {} # <--- ERROR 1 CORREGIDO: Definido aquí
 
+# NUEVA MEMORIA: Para el despertador de portadas
+current_track_info = {
+    "url": "",
+    "artist": "ESPERANDO...",
+    "track": "MÚSICA"
+}
+
 # --- 2. LÓGICA DE PORTADAS (STREAMLIT / RENDER.COM) ---
 class CoverData(BaseModel):
     url: str
@@ -24,6 +31,12 @@ class CoverData(BaseModel):
 
 @app.post("/update_cover")
 async def post_cover(data: CoverData):
+    global current_track_info
+    # Guardamos la portada actual en la memoria del servidor
+    current_track_info["url"] = data.url
+    current_track_info["artist"] = data.artist
+    current_track_info["track"] = data.track
+
     await broadcast({
         "action": "update_cover", 
         "url": data.url, 
@@ -31,6 +44,11 @@ async def post_cover(data: CoverData):
         "track": data.track
     })
     return {"status": "ok"}
+
+# NUEVO ENDPOINT: El "Despertador" que llama el index.html
+@app.get("/current_status")
+async def get_current_status():
+    return {"status": "ok", "info": current_track_info}
 
 # --- 3. PUENTE ART-NET (RESOLUME) ---
 ARTNET_UNIVERSE = 0
@@ -76,6 +94,15 @@ async def websocket_endpoint(websocket: WebSocket):
     all_connections.add(websocket)
     current_id = None
     
+    # NUEVO: En cuanto alguien se conecta, le enviamos la portada directamente
+    if current_track_info["url"]:
+        await websocket.send_text(json.dumps({
+            "action": "update_cover",
+            "url": current_track_info["url"],
+            "artist": current_track_info["artist"],
+            "track": current_track_info["track"]
+        }))
+
     try:
         while True:
             raw_data = await websocket.receive_text()
