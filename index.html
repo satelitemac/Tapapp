@@ -6,90 +6,152 @@
     <title>T&T | EVENT</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800;900&display=swap" rel="stylesheet">
     <style>
-        :root { --accent: #ff5e00; --tech-gray: #1a1a1a; }
+        :root { 
+            --accent: #ff5e00; 
+            --tech-gray: #1a1a1a; 
+        }
 
+        /* Forzamos a que el fondo exterior sea siempre negro puro */
         body, html { 
             margin: 0; padding: 0; height: 100%; width: 100%; 
             background-color: #000;
-            background-image: url('fondo-cassette.jpg'); 
-            background-size: cover;
-            background-position: center top;
-            background-repeat: no-repeat;
             color: #1a1a1a; 
-            font-family: 'Inter', sans-serif; overflow: hidden; 
+            font-family: 'Inter', sans-serif; 
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
+        /* CONTENEDOR MÁGICO: Mantiene la proporción exacta del casete */
+        .app-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 450px; /* Límite para pantallas grandes o tablets */
+            max-height: 100vh;
+            background-image: url('fondo-cassette.jpg'); 
+            background-size: contain; /* Cambiado a contain para que NUNCA se corte el casete */
+            background-position: center;
+            background-repeat: no-repeat;
+            box-sizing: border-box;
+        }
+
+        /* Las pantallas ahora se adaptan al área interna del contenedor del casete */
         .screen { 
             display: none; 
-            height: 100vh; 
-            width: 100%; 
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             flex-direction: column; 
             align-items: center; 
-            justify-content: center; 
-            text-align: center;
             box-sizing: border-box;
             padding: 20px;
-            background: transparent; 
         }
         .active { display: flex; z-index: 10; }
         
         .tt-logo {
-            font-weight: 900; font-size: 2.2rem; 
+            font-weight: 900; font-size: 2rem; 
             letter-spacing: -1px; text-transform: uppercase;
-            margin-bottom: 20px;
             color: #1a1a1a;
-        }
-
-        /* Ajustamos el contenedor de la pantalla de peticiones sobre el papel */
-        #sc-wait.active {
-            padding-top: 38vh; 
-            justify-content: flex-start;
-        }
-
-        #now-playing-container { 
-            width: 100%; max-width: 280px; min-height: 0;
+            margin-top: 15vh; /* Empuja el título según la altura del casete */
             margin-bottom: 20px;
-            display: flex; flex-direction: column; justify-content: center;
-        }
-        #now-playing-img { 
-            width: 100%; aspect-ratio: 1/1; border-radius: 12px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: cover;
         }
 
-        .controls-area { width: 100%; max-width: 300px; }
+        /* Pantalla de peticiones (Espera) con márgenes perfectos sobre la pegatina */
+        #sc-wait.active {
+            justify-content: flex-start;
+            padding-top: 28vh; /* Centrado vertical exacto sobre el espacio en blanco del casete */
+        }
+
+        /* Contenedor dinámico para lo que llega del Servidor (Portada + Info) */
+        #now-playing-container { 
+            width: 85%; 
+            max-width: 260px;
+            margin-bottom: 15px;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+        }
+        
+        /* Contenedor interno del texto dinámico del servidor */
+        .live-info {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        #np-artist { 
+            color: var(--accent); 
+            font-weight: 900; 
+            margin: 0; 
+            font-size: 0.75rem; 
+            text-transform: uppercase; 
+            letter-spacing: 2px;
+        }
+        #np-track { 
+            color: #1a1a1a; 
+            font-weight: 800; 
+            margin: 3px 0 0 0; 
+            font-size: 1rem; 
+            text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis; /* Si el título es muy largo, añade "..." de forma elegante */
+        }
+
+        #now-playing-img { 
+            width: 65%; /* Reducido un poco para que no rompa los márgenes verticales */
+            aspect-ratio: 1/1; 
+            border-radius: 8px; 
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3); 
+            object-fit: cover;
+        }
+
+        /* Área general que envuelve los formularios y botones */
+        .controls-area { 
+            width: 85%; 
+            max-width: 280px; 
+            margin-top: auto; /* Empuja los controles hacia abajo dentro de los límites */
+            margin-bottom: 12vh; /* Evita que el botón se salga por abajo en pantallas cortas */
+        }
         
         .input-field { 
             width: 100%; 
-            padding: 15px 10px; 
-            margin-bottom: 15px; 
+            padding: 12px 10px; 
+            margin-bottom: 12px; 
             border: none; 
             background: transparent; 
-            border-bottom: 2px solid rgba(0,0,0,0.2); 
+            border-bottom: 2px solid rgba(0,0,0,0.15); 
             color: #1a1a1a; 
             text-align: center; 
-            font-size: 1.1rem; 
+            font-size: 1.05rem; 
             font-weight: 800;
             box-sizing: border-box; 
         }
-        .input-field::placeholder { color: rgba(0,0,0,0.4); }
+        .input-field::placeholder { color: rgba(0,0,0,0.35); }
         .input-field:focus { outline: none; border-bottom: 2px solid var(--accent); }
         
         .technics-btn { 
-            width: 100%; padding: 18px; border-radius: 30px; border: none; 
+            width: 100%; padding: 15px; border-radius: 30px; border: none; 
             background: var(--accent); color: white; 
-            font-weight: 800; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px;
-            box-shadow: 0px 4px 15px rgba(0,0,0,0.2);
+            font-weight: 800; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0px 4px 12px rgba(0,0,0,0.15);
             display: flex; flex-direction: column; align-items: center;
-            margin-top: 10px;
             cursor: pointer;
+            box-sizing: border-box;
         }
-        .technics-btn:active { transform: translateY(3px); box-shadow: 0px 2px 0px rgba(0,0,0,0.2); }
+        .technics-btn:active { transform: translateY(2px); box-shadow: 0px 2px 0px rgba(0,0,0,0.15); }
         
-        #sc-radar { background: rgba(0,0,0,0.8); color: white; }
-        #sc-radar .tt-logo { color: white; }
+        /* Pantalla Radar (Ajustada al nuevo layout) */
+        #sc-radar { background: rgba(0,0,0,0.85); color: white; }
+        #sc-radar .tt-logo { color: white; margin-top: 15vh; }
+        .radar-container {
+            display: flex; height: 100%; width: 100%;
+            flex-direction: column; align-items: center; justify-content: center;
+        }
         .radar-btn { 
-            width: 220px; height: 220px; border-radius: 50%; border: 10px solid white; 
-            background: none; color: white; font-size: 1.8rem; font-weight: 900;
+            width: 180px; height: 180px; border-radius: 50%; border: 8px solid white; 
+            background: none; color: white; font-size: 1.6rem; font-weight: 900;
             display: flex; align-items: center; justify-content: center;
         }
 
@@ -99,34 +161,41 @@
 <body>
     <div id="flash-overlay"></div>
 
-    <div id="sc-login" class="screen active">
-        <div class="tt-logo" style="color:var(--accent)">HOLA!</div>
-        <div class="controls-area">
-            <input type="text" id="n" class="input-field" placeholder="Nombre">
-            <input type="text" id="m" class="input-field" placeholder="Mesa">
-            <button class="technics-btn" onclick="init()">ENTRAR</button>
-        </div>
-    </div>
+    <div class="app-container">
 
-    <div id="sc-wait" class="screen">
-        <div id="now-playing-container" style="display: none;">
-            <div style="margin-bottom: 10px; text-align: center;">
-                <p id="np-artist" style="color: var(--accent); font-weight: 900; margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px;"></p>
-                <p id="np-track" style="color: #1a1a1a; font-weight: 800; margin: 5px 0 10px 0; font-size: 1.1rem; text-transform: uppercase;"></p>
+        <div id="sc-login" class="screen active">
+            <div class="tt-logo" style="color:var(--accent)">HOLA!</div>
+            <div class="controls-area">
+                <input type="text" id="n" class="input-field" placeholder="Nombre">
+                <input type="text" id="m" class="input-field" placeholder="Mesa">
+                <button class="technics-btn" onclick="init()">ENTRAR</button>
             </div>
-            <img id="now-playing-img" src="">
         </div>
-        <div class="controls-area">
-            <input type="text" id="msg-dj" class="input-field" placeholder="¿Alguna petición?">
-            <button class="technics-btn" onclick="sendDJ(event)">
-                <span id="btn-dj-text">Enviar DJ</span>
-            </button>
-        </div>
-    </div>
 
-    <div id="sc-radar" class="screen">
-        <div class="tt-logo" style="position: absolute; top: 15%;">¡ATENCION!</div>
-        <button id="btn-p" class="radar-btn" onclick="pulsar()">ESPERA</button>
+        <div id="sc-wait" class="screen">
+            <div id="now-playing-container" style="display: none;">
+                <div class="live-info">
+                    <p id="np-artist"></p>
+                    <p id="np-track"></p>
+                </div>
+                <img id="now-playing-img" src="">
+            </div>
+            
+            <div class="controls-area">
+                <input type="text" id="msg-dj" class="input-field" placeholder="¿Alguna petición?">
+                <button class="technics-btn" onclick="sendDJ(event)">
+                    <span id="btn-dj-text">Enviar DJ</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="sc-radar" class="screen">
+            <div class="radar-container">
+                <div class="tt-logo">¡ATENCION!</div>
+                <button id="btn-p" class="radar-btn" onclick="pulsar()">ESPERA</button>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -197,6 +266,7 @@
             showScreen('sc-wait');
         }
 
+        /* Manejo robusto del contenido del servidor */
         if(data.action === "update_cover") {
             const container = document.getElementById('now-playing-container');
             if(data.url && data.url !== "") {
