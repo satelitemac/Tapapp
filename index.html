@@ -11,10 +11,9 @@
             --tech-gray: #1a1a1a; 
         }
 
-        /* FONDO GENERAL EN NEGRO: Esto creará las franjas cuando sea necesario */
         body, html { 
             margin: 0; padding: 0; height: 100%; width: 100%; 
-            background-color: #000; 
+            background-color: #000;
             color: #1a1a1a; 
             font-family: 'Inter', sans-serif; 
             overflow: hidden;
@@ -23,21 +22,13 @@
             align-items: center;
         }
 
-        /* =========================================================
-           EL LIENZO BLINDADO (Matemáticamente proporcionado)
-           ========================================================= */
+        /* EL LIENZO: Mapeado al 100% de la pantalla del móvil */
         .app-container {
             position: relative;
             width: 100%;
             height: 100%;
-            
-            /* LA MAGIA: Calculamos el ancho y alto máximos según la proporción real de un móvil moderno (9:19.5). 
-               Esto obliga al navegador a frenar el estiramiento y crear franjas negras arriba/abajo o a los lados. */
-            max-width: calc(100vh * (9 / 19.5));
-            max-height: calc(100vw * (19.5 / 9));
-            
+            max-width: 480px; 
             background-image: url('fondo-cassette.jpg'); 
-            /* Ahora el 100% 100% es completamente seguro, nunca se deformará */
             background-size: 100% 100%; 
             background-position: center top;
             background-repeat: no-repeat;
@@ -54,14 +45,14 @@
         .active { display: block; z-index: 10; }
 
         /* =========================================================
-           LA CAJA DE LA PEGATINA 
+           LA CAJA DE LA PEGATINA (Común para Login y Música)
            ========================================================= */
         .cassette-label-box {
             position: absolute;
-            top: 31%;      
+            top: 31%;      /* Ajusta este % para calibrar la altura general de la pegatina */
             left: 10%;       
             width: 80%;      
-            height: 50%;     
+            height: 50%;     /* Altura exacta que cubre el espacio en blanco de la pegatina */
             
             display: flex;
             flex-direction: column;
@@ -69,26 +60,26 @@
             justify-content: center; 
             box-sizing: border-box;
             padding: 2% 0;
-            
-            /* Puedes borrar esta línea roja cuando lo pruebes */
-            border: 0px dashed red; 
+
+            /* BORDE ROJO PARA CALIBRAR (Bórralo cuando esté en su sitio) */
+            border: 2px dashed red; 
         }
 
-        /* COMPOSICIÓN INTERNA DEL LOGIN */
+        /* COMPOSICIÓN INTERNA DEL LOGIN (Centrado total en la pegatina) */
         .login-container {
             width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between; 
+            justify-content: space-between; /* Distribuye el título arriba y los inputs abajo */
             padding: 0 5%;
             box-sizing: border-box;
         }
 
         .login-container .tt-logo {
             font-weight: 900; 
-            font-size: clamp(1.5rem, 6vw, 1.8rem); /* Texto adaptable */
+            font-size: 1.8rem; 
             color: var(--accent);
             margin: 5px 0 0 0;
             text-transform: uppercase;
@@ -102,21 +93,21 @@
             align-items: center;
         }
 
-        /* COMPOSICIÓN INTERNA DE LA MÚSICA */
+        /* COMPOSICIÓN INTERNA DE LA MÚSICA (Texto arriba, foto abajo) */
         #now-playing-container { 
             width: 100%;
             height: 100%;
             display: flex; 
             flex-direction: column; 
             align-items: center;
-            justify-content: space-between; /* Modificado para separar limpiamente el texto de la foto */
+            justify-content: space-between; /* Separa el texto (arriba) de la foto (abajo) */
             box-sizing: border-box;
         }
         
         .live-info { 
             width: 100%; 
             text-align: center; 
-            margin-bottom: auto; /* Empuja los textos hacia la parte superior (bajo los agujeros) */
+            margin-bottom: auto; /* Empuja el texto hacia arriba */
             flex-shrink: 0;
         }
         
@@ -125,11 +116,10 @@
             font-family: 'Permanent Marker', cursive; /* Efecto rotulador */
             font-weight: 400; 
             margin: 0 0 2px 0; 
-            font-size: clamp(0.95rem, 3.8vw, 1.10rem); /* Escalado para el tipo de fuente */
+            font-size: clamp(1rem, 4vw, 1.2rem); 
             text-transform: uppercase; 
             letter-spacing: 1.5px; 
-            transform: rotate(-1.5deg); /* Le da esa imperfección de escritura humana */
-            display: block;
+            transform: rotate(-1.5deg); /* Inclinación "humana" */
         }
         
         #np-track { 
@@ -137,34 +127,32 @@
             font-family: 'Permanent Marker', cursive; /* Efecto rotulador */
             font-weight: 400; 
             margin: 0; 
-            font-size: clamp(1.2rem, 4.8vw, 1.45rem); /* Un poco más gordo, estilo Sharpie */
+            font-size: clamp(1.3rem, 5vw, 1.5rem); 
             text-transform: uppercase; 
             white-space: nowrap; 
             overflow: hidden; 
             text-overflow: ellipsis; 
             width: 100%;
             transform: rotate(-0.5deg); /* Ligera rotación cruzada */
-            display: block;
         }
 
         #now-playing-img { 
-            height: 65%; /* Reducido un pelín para que la zona superior de escritura respire */
+            height: 65%; /* Reducido un pelín para que la zona de escritura respire */
             max-width: 95%; /* Impide que reviente la caja por los lados */
             aspect-ratio: 1/1; 
             border-radius: 8px; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
             object-fit: cover;
-            margin-bottom: 2%; /* Margen de seguridad inferior */
         }
 
         /* =========================================================
-           CONTROLES INFERIORES (Mantenido al 50% para proteger logo TDK)
+           CONTROLES INFERIORES: Absolutos abajo al lado de TDK
            ========================================================= */
         .controls-area-footer { 
             position: absolute;
-            bottom: 12%; 
+            bottom: 12%; /* Mantén este valor para que coincida con la zona del logo TDK */
             left: 10%;
-            width: 50%; 
+            width: 50%; /* RESTAURADO AL 50% PARA MANTENER LA SIMETRÍA Y NO TAPAR TDK */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -181,8 +169,7 @@
         
         .technics-btn { 
             width: 100%; padding: 14px; border-radius: 30px; border: none; background: var(--accent); 
-            color: white; font-weight: 800; font-size: clamp(0.85rem, 3.5vw, 1rem); 
-            text-transform: uppercase; letter-spacing: 1px;
+            color: white; font-weight: 800; font-size: clamp(0.85rem, 3.5vw, 1rem); text-transform: uppercase; letter-spacing: 1px;
             box-shadow: 0px 4px 12px rgba(0,0,0,0.2); cursor: pointer; box-sizing: border-box;
         }
         .technics-btn:active { transform: translateY(2px); }
@@ -227,7 +214,7 @@
             </div>
             
             <div class="controls-area-footer">
-                <input type="text" id="msg-dj" class="input-field" placeholder="¿IDEAS?">
+                <input type="text" id="msg-dj" class="input-field" placeholder="¿Alguna petición?">
                 <button class="technics-btn" onclick="sendDJ(event)">
                     <span id="btn-dj-text">Enviar DJ</span>
                 </button>
