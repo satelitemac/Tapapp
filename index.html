@@ -43,38 +43,57 @@
             box-sizing: border-box;
         }
         .active { display: block; z-index: 10; }
-        
-        /* Pantalla Login */
-        #sc-login { display: flex; flex-direction: column; align-items: center; }
-        #sc-login .tt-logo {
-            font-weight: 900; font-size: 2.2rem; color: var(--accent);
-            margin-top: 15vh;
-        }
-        #sc-login .controls-area {
-            position: absolute; bottom: 10%; width: 80%;
-        }
 
         /* =========================================================
-           LA CAJA DE LA PEGATINA (Música: Texto arriba, Foto abajo)
+           LA CAJA DE LA PEGATINA (Común para Login y Música)
            ========================================================= */
         .cassette-label-box {
             position: absolute;
-            top: 29.5%;      /* Ajusta este % para cuadrar el inicio de la pegatina blanca */
+            top: 29.5%;      /* Ajusta este % para calibrar la altura general de la pegatina */
             left: 10%;       
             width: 80%;      
-            height: 36%;     /* Altura reducida: ahora solo cubre el espacio de la música */
+            height: 36%;     /* Altura exacta que cubre el espacio en blanco de la pegatina */
             
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start; 
+            justify-content: center; 
             box-sizing: border-box;
             padding: 2% 0;
 
-            /* BORDE ROJO PARA CALIBRAR (Bórralo cuando esté en su sitio) */
+            /* BORDE ROJO PARA CALIBRAR (Elimínalo cuando esté cuadrado a tu gusto) */
             border: 2px dashed red; 
         }
 
+        /* COMPOSICIÓN INTERNA DEL LOGIN (Centrado total en la pegatina) */
+        .login-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between; /* Distribuye el título arriba y los inputs abajo */
+            padding: 0 5%;
+            box-sizing: border-box;
+        }
+
+        .login-container .tt-logo {
+            font-weight: 900; 
+            font-size: 1.8rem; 
+            color: var(--accent);
+            margin: 5px 0 0 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .login-container .controls-login {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* COMPOSICIÓN INTERNA DE LA MÚSICA */
         #now-playing-container { 
             width: 100%;
             height: 100%;
@@ -113,7 +132,7 @@
         }
 
         #now-playing-img { 
-            height: 72%; /* Portada grande y destacada dentro de la pegatina */
+            height: 72%; 
             aspect-ratio: 1/1; 
             border-radius: 8px; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
@@ -121,13 +140,13 @@
         }
 
         /* =========================================================
-           CONTROLES INFERIORES: Absolutos abajo al lado de TDK
+           CONTROLES INFERIORES: Fijos abajo al lado de TDK
            ========================================================= */
-        #sc-wait .controls-area { 
+        .controls-area-footer { 
             position: absolute;
-            bottom: 6%; /* Colocado de forma fija abajo en la zona de plástico del logo TDK */
+            bottom: 6%; /* Mantén este valor para que coincida con la zona del logo TDK */
             left: 10%;
-            width: 50%; 
+            width: 80%; 
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -163,16 +182,21 @@
     <div class="app-container">
 
         <div id="sc-login" class="screen active">
-            <div class="tt-logo">HOLA!</div>
-            <div class="controls-area">
-                <input type="text" id="n" class="input-field" placeholder="Nombre">
-                <input type="text" id="m" class="input-field" placeholder="Mesa">
+            <div class="cassette-label-box">
+                <div class="login-container">
+                    <div class="tt-logo">¡HOLA!</div>
+                    <div class="controls-login">
+                        <input type="text" id="n" class="input-field" placeholder="Nombre">
+                        <input type="text" id="m" class="input-field" placeholder="Mesa">
+                    </div>
+                </div>
+            </div>
+            <div class="controls-area-footer">
                 <button class="technics-btn" onclick="init()">ENTRAR</button>
             </div>
         </div>
 
         <div id="sc-wait" class="screen">
-            
             <div class="cassette-label-box">
                 <div id="now-playing-container" style="display: none;">
                     <div class="live-info">
@@ -183,18 +207,19 @@
                 </div>
             </div>
             
-            <div class="controls-area">
+            <div class="controls-area-footer">
                 <input type="text" id="msg-dj" class="input-field" placeholder="¿Alguna petición?">
                 <button class="technics-btn" onclick="sendDJ(event)">
                     <span id="btn-dj-text">Enviar DJ</span>
                 </button>
             </div>
-
         </div>
 
         <div id="sc-radar" class="screen">
-            <div class="tt-logo" style="color:white; margin-bottom:30px;">¡ATENCION!</div>
-            <button id="btn-p" class="radar-btn" onclick="pulsar()">ESPERA</button>
+            <div class="tt-logo" style="color:white; margin-bottom:30px; text-align:center;">¡ATENCION!</div>
+            <div style="display:flex; justify-content:center; width:100%;">
+                <button id="btn-p" class="radar-btn" onclick="pulsar()">ESPERA</button>
+            </div>
         </div>
 
     </div>
