@@ -22,148 +22,111 @@
             align-items: center;
         }
 
-        /* CONTENEDOR TOTAL: Ocupa el 100% del lienzo del teléfono móvil */
+        /* EL LIENZO: Estiramos la imagen para que calque el 100% del móvil */
         .app-container {
             position: relative;
             width: 100%;
             height: 100%;
-            max-width: 480px; /* Consistencia en pantallas más anchas o simulación de PC */
+            max-width: 480px; 
             background-image: url('fondo-cassette.jpg'); 
-            background-size: cover; /* Asegura que cubra toda la pantalla de arriba a abajo */
+            /* Esto es vital: obliga al casete a ocupar el 100% del ancho y alto, permitiendo mapear en % */
+            background-size: 100% 100%; 
             background-position: center top;
             background-repeat: no-repeat;
             box-sizing: border-box;
         }
 
-        /* Capas absolutas para las secciones */
         .screen { 
             display: none; 
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            flex-direction: column; 
-            align-items: center; 
             box-sizing: border-box;
         }
-        .active { display: flex; z-index: 10; }
+        .active { display: block; z-index: 10; }
         
-        /* Pantalla de bienvenida / Login */
+        #sc-login { display: flex; flex-direction: column; align-items: center; }
         #sc-login .tt-logo {
             font-weight: 900; font-size: 2.2rem; color: var(--accent);
             margin-top: 15vh;
         }
+        #sc-login .controls-area {
+            position: absolute; bottom: 10%; width: 80%;
+        }
 
-        /* LA CAJA DINÁMICA: Ajustada milimétricamente a la pegatina blanca del nuevo casete vertical */
+        /* =========================================================
+           LA CAJA DE LA PEGATINA (El secreto está aquí)
+           ========================================================= */
         .cassette-label-box {
             position: absolute;
-            top: 21vh;       /* Posición exacta en el eje vertical de las líneas de la cinta */
-            left: 12%;       /* Centrado horizontal respecto al cuerpo del casete */
-            width: 76%;      /* Ancho útil de la pegatina blanca */
-            height: 38vh;    /* Altura total que cubre el bloque para escribir */
+            /* Coordenadas basadas en la proporción real de tu foto */
+            top: 29.5%;      /* Distancia desde arriba hasta la línea de la pegatina */
+            left: 10%;       /* Margen izquierdo */
+            width: 80%;      /* Ancho de la pegatina */
+            height: 52%;     /* Altura hasta justo encima del logo TDK */
+            
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between; /* Arriba la música, abajo el formulario */
             box-sizing: border-box;
-            padding: 8px;
-            /* background: rgba(255, 0, 0, 0.15); */ /* Descomenta para ver la caja durante las pruebas si es necesario */
+            padding: 2% 0;
+
+            /* ¡ATENCIÓN! BORDE ROJO PARA CALIBRAR */
+            border: 2px dashed red; 
         }
 
-        /* Contenedor del Servidor (Contenido dinámico de música) */
+        /* 1. SECCIÓN SUPERIOR: Portada y Artista */
         #now-playing-container { 
             width: 100%;
-            height: 100%;
+            height: 60%; /* Ocupa el 60% superior de la pegatina */
             display: flex; 
             flex-direction: column; 
             align-items: center;
-            justify-content: space-between; /* Texto arriba, portada abajo */
+            justify-content: flex-start;
         }
         
-        .live-info {
-            width: 100%;
-            text-align: center;
-            padding-top: 5px;
-        }
-        
-        /* Nombre de artista en formato compacto superior */
-        #np-artist { 
-            color: var(--accent); 
-            font-weight: 900; 
-            margin: 0; 
-            font-size: 0.8rem; 
-            text-transform: uppercase; 
-            letter-spacing: 1.5px;
-        }
-        
-        /* Nombre de la canción ocupando la línea principal */
-        #np-track { 
-            color: #1a1a1a; 
-            font-weight: 800; 
-            margin: 2px 0 0 0; 
-            font-size: 1.1rem; 
-            text-transform: uppercase;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        .live-info { width: 100%; text-align: center; margin-bottom: 5px; }
+        #np-artist { color: var(--accent); font-weight: 900; margin: 0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px; }
+        #np-track { color: #1a1a1a; font-weight: 800; margin: 2px 0 0 0; font-size: 1.1rem; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* Portada encajada en la sección central-inferior de la pegatina */
         #now-playing-img { 
-            height: 68%; /* Proporción limpia para no pisar los engranajes o textos */
+            height: 100%; 
+            max-height: 160px; /* Límite para que no se desmadre en móviles gigantes */
             aspect-ratio: 1/1; 
             border-radius: 6px; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.15); 
             object-fit: cover;
-            margin-bottom: 4px;
         }
 
-        /* CONTROLES INFERIORES: Posicionados sobre la parte baja del casete */
-        .controls-area { 
-            position: absolute;
-            bottom: 7vh; /* Ajustado para quedar por encima del borde inferior de la pantalla */
-            width: 80%; 
+        /* 2. SECCIÓN INFERIOR: Controles */
+        #sc-wait .controls-area { 
+            width: 100%; 
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: flex-end;
         }
         
         .input-field { 
-            width: 100%; 
-            padding: 12px; 
-            margin-bottom: 12px; 
-            border: none; 
-            background: transparent; 
-            border-bottom: 2px solid rgba(0,0,0,0.2); 
-            color: #1a1a1a; 
-            text-align: center; 
-            font-size: 1.1rem; 
-            font-weight: 800;
-            box-sizing: border-box; 
+            width: 100%; padding: 12px; margin-bottom: 8px; border: none; background: transparent; 
+            border-bottom: 2px solid rgba(0,0,0,0.2); color: #1a1a1a; text-align: center; 
+            font-size: 1.1rem; font-weight: 800; box-sizing: border-box; 
         }
         .input-field::placeholder { color: rgba(0,0,0,0.4); }
         .input-field:focus { outline: none; border-bottom: 2px solid var(--accent); }
         
         .technics-btn { 
-            width: 100%; padding: 15px; border-radius: 30px; border: none; 
-            background: var(--accent); color: white; 
-            font-weight: 800; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px;
-            box-shadow: 0px 4px 12px rgba(0,0,0,0.2);
-            cursor: pointer;
-            box-sizing: border-box;
-            text-align: center;
+            width: 100%; padding: 15px; border-radius: 30px; border: none; background: var(--accent); 
+            color: white; font-weight: 800; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0px 4px 12px rgba(0,0,0,0.2); cursor: pointer; box-sizing: border-box;
         }
         .technics-btn:active { transform: translateY(2px); }
         
-        /* Pantalla de alerta del Radar */
-        #sc-radar { background: rgba(0,0,0,0.92); color: white; }
-        .radar-container {
-            display: flex; height: 100%; width: 100%;
-            flex-direction: column; align-items: center; justify-content: center;
-        }
-        .radar-btn { 
-            width: 170px; height: 170px; border-radius: 50%; border: 8px solid white; 
-            background: none; color: white; font-size: 1.7rem; font-weight: 900;
-        }
+        /* Pantalla Radar */
+        #sc-radar { display: none; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.92); color: white; position: absolute; top:0; left:0; width:100%; height:100%; z-index: 20;}
+        #sc-radar.active { display: flex; }
+        .radar-btn { width: 170px; height: 170px; border-radius: 50%; border: 8px solid white; background: none; color: white; font-size: 1.7rem; font-weight: 900; }
 
         #flash-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:none; pointer-events: none; }
     </style>
@@ -185,6 +148,7 @@
         <div id="sc-wait" class="screen">
             
             <div class="cassette-label-box">
+                
                 <div id="now-playing-container" style="display: none;">
                     <div class="live-info">
                         <p id="np-artist"></p>
@@ -192,21 +156,20 @@
                     </div>
                     <img id="now-playing-img" src="">
                 </div>
-            </div>
-            
-            <div class="controls-area">
-                <input type="text" id="msg-dj" class="input-field" placeholder="¿Alguna petición?">
-                <button class="technics-btn" onclick="sendDJ(event)">
-                    <span id="btn-dj-text">Enviar DJ</span>
-                </button>
+                
+                <div class="controls-area">
+                    <input type="text" id="msg-dj" class="input-field" placeholder="¿Alguna petición?">
+                    <button class="technics-btn" onclick="sendDJ(event)">
+                        <span id="btn-dj-text">Enviar DJ</span>
+                    </button>
+                </div>
+
             </div>
         </div>
 
         <div id="sc-radar" class="screen">
-            <div class="radar-container">
-                <div class="tt-logo" style="color:white; margin-bottom:30px;">¡ATENCION!</div>
-                <button id="btn-p" class="radar-btn" onclick="pulsar()">ESPERA</button>
-            </div>
+            <div class="tt-logo" style="color:white; margin-bottom:30px;">¡ATENCION!</div>
+            <button id="btn-p" class="radar-btn" onclick="pulsar()">ESPERA</button>
         </div>
 
     </div>
@@ -259,7 +222,6 @@
             showScreen('sc-wait');
         }
 
-        /* Sincronización del contenido en tiempo real del servidor */
         if(data.action === "update_cover") {
             const container = document.getElementById('now-playing-container');
             if(data.url && data.url !== "") {
@@ -315,8 +277,10 @@
     }
     function pulsar() { socket.send(JSON.stringify({type:"player_click", user_id: myId})); }
     function showScreen(id) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
+        const activeScreen = document.getElementById(id);
+        activeScreen.classList.add('active');
+        activeScreen.style.display = 'flex';
     }
     setInterval(() => { if(socket.readyState === 1) socket.send(JSON.stringify({type:"ping"})); }, 20000);
 
