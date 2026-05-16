@@ -22,14 +22,13 @@
             align-items: center;
         }
 
-        /* EL LIENZO: Estiramos la imagen para que calque el 100% del móvil */
+        /* EL LIENZO */
         .app-container {
             position: relative;
             width: 100%;
             height: 100%;
             max-width: 480px; 
             background-image: url('fondo-cassette.jpg'); 
-            /* Esto es vital: obliga al casete a ocupar el 100% del ancho y alto, permitiendo mapear en % */
             background-size: 100% 100%; 
             background-position: center top;
             background-repeat: no-repeat;
@@ -55,59 +54,88 @@
         }
 
         /* =========================================================
-           LA CAJA DE LA PEGATINA (El secreto está aquí)
+           LA CAJA DE LA PEGATINA (Mueve el top y el height a tu gusto)
            ========================================================= */
         .cassette-label-box {
             position: absolute;
-            /* Coordenadas basadas en la proporción real de tu foto */
-            top: 40%;      /* Distancia desde arriba hasta la línea de la pegatina */
-            left: 10%;       /* Margen izquierdo */
-            width: 80%;      /* Ancho de la pegatina */
-            height: 52%;     /* Altura hasta justo encima del logo TDK */
+            top: 29.5%;      
+            left: 10%;       
+            width: 80%;      
+            height: 52%;     
             
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between; /* Arriba la música, abajo el formulario */
+            justify-content: space-between; 
             box-sizing: border-box;
             padding: 2% 0;
 
-            /* ¡ATENCIÓN! BORDE ROJO PARA CALIBRAR */
+            /* BORDE ROJO PARA CALIBRAR (Bórralo cuando lo tengas cuadrado) */
             border: 2px dashed red; 
         }
 
-        /* 1. SECCIÓN SUPERIOR: Portada y Artista */
+        /* 1. SECCIÓN SUPERIOR: Portada a la Izquierda, Texto a la Derecha */
         #now-playing-container { 
             width: 100%;
-            height: 85%; /* Ocupa el 60% superior de la pegatina */
+            height: 50%; /* Ocupa la mitad superior de la caja roja */
             display: flex; 
-            flex-direction: column; 
-            align-items: center;
+            flex-direction: row; /* ELEMENTOS EN FILA HORIZONTAL */
+            align-items: center; /* Centrados verticalmente */
             justify-content: flex-start;
+            padding: 0 5%;
+            box-sizing: border-box;
         }
-        
-        .live-info { width: 100%; text-align: center; margin-bottom: 5px; }
-        #np-artist { color: var(--accent); font-weight: 900; margin: 0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px; }
-        #np-track { color: #1a1a1a; font-weight: 800; margin: 2px 0 0 0; font-size: 1.1rem; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         #now-playing-img { 
-            width: 70%; /* <-- MAGIA AQUÍ: Sube o baja este porcentaje para hacer la portada más grande o pequeña */
-            max-width: 240px; /* Un tope por si alguien lo abre en una tablet gigante */
-            height: auto;
-            aspect-ratio: 1/1; /* Mantiene la proporción cuadrada perfecta */
-            border-radius: 6px; 
+            height: 90%; /* Ocupa casi todo el alto disponible en su mitad */
+            max-height: 120px; 
+            aspect-ratio: 1/1; /* Cuadrado perfecto */
+            border-radius: 8px; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.2); 
             object-fit: cover;
-            margin-top: 10px; /* Separación entre el título y la foto */
+            margin-right: 15px; /* Empuja el texto hacia la derecha */
+        }
+        
+        .live-info { 
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; /* Alinea los textos a la izquierda */
+            text-align: left;
+            flex: 1; /* Rellena todo el espacio sobrante a la derecha de la imagen */
+            overflow: hidden; /* Evita que se desborde si el título es larguísimo */
+        }
+        
+        #np-artist { 
+            color: var(--accent); 
+            font-weight: 900; 
+            margin: 0 0 4px 0; 
+            font-size: 0.85rem; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+        }
+        
+        #np-track { 
+            color: #1a1a1a; 
+            font-weight: 800; 
+            margin: 0; 
+            font-size: 1.15rem; 
+            text-transform: uppercase; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            width: 100%;
         }
 
-        /* 2. SECCIÓN INFERIOR: Controles */
-        #sc-wait .controls-area { 
+        /* 2. SECCIÓN INFERIOR: Controles del DJ */
+        .cassette-label-box .controls-area { 
             width: 100%; 
+            height: 50%; /* Ocupa la mitad inferior de la caja roja */
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-end;
+            justify-content: flex-end; /* Empuja el input y el botón hacia abajo */
+            padding: 0 5%;
+            box-sizing: border-box;
         }
         
         .input-field { 
@@ -152,11 +180,11 @@
             <div class="cassette-label-box">
                 
                 <div id="now-playing-container" style="display: none;">
+                    <img id="now-playing-img" src="">
                     <div class="live-info">
                         <p id="np-artist"></p>
                         <p id="np-track"></p>
                     </div>
-                    <img id="now-playing-img" src="">
                 </div>
                 
                 <div class="controls-area">
