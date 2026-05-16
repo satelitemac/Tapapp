@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>T&T | EVENT</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800;900&family=Permanent+Marker&display=swap" rel="stylesheet">
     <style>
         :root { 
             --accent: #ff5e00; 
@@ -31,13 +31,11 @@
             width: 100%;
             height: 100%;
             
-            /* LA MAGIA: Calculamos el ancho y alto máximos según la proporción real de un móvil moderno (9:19.5). 
-               Esto obliga al navegador a frenar el estiramiento y crear franjas negras arriba/abajo o a los lados. */
+            /* LA MAGIA: Calculamos el ancho y alto máximos según la proporción real de un móvil moderno (9:19.5). */
             max-width: calc(100vh * (9 / 19.5));
             max-height: calc(100vw * (19.5 / 9));
             
             background-image: url('fondo-cassette.jpg'); 
-            /* Ahora el 100% 100% es completamente seguro, nunca se deformará */
             background-size: 100% 100%; 
             background-position: center top;
             background-repeat: no-repeat;
@@ -54,14 +52,14 @@
         .active { display: block; z-index: 10; }
 
         /* =========================================================
-           LA CAJA DE LA PEGATINA 
+           LA CAJA DE LA PEGATINA (Ahora más alta hacia arriba)
            ========================================================= */
         .cassette-label-box {
             position: absolute;
-            top: 33%;      
+            top: 24%;       /* SUBIDO: Ahora empieza justo debajo de los agujeros centrales */
             left: 10%;       
             width: 80%;      
-            height: 50%;     
+            height: 52%;    /* AMPLIADO: Cubre todo el lienzo de la pegatina blanca */
             
             display: flex;
             flex-direction: column;
@@ -70,7 +68,7 @@
             box-sizing: border-box;
             padding: 2% 0;
             
-            /* Puedes borrar esta línea roja cuando lo pruebes */
+            /* Cambia a '2px dashed red' si necesitas verificar los bordes visualmente */
             border: 0px dashed red; 
         }
 
@@ -88,7 +86,7 @@
 
         .login-container .tt-logo {
             font-weight: 900; 
-            font-size: clamp(1.5rem, 6vw, 1.8rem); /* Texto adaptable */
+            font-size: clamp(1.5rem, 6vw, 1.8rem); 
             color: var(--accent);
             margin: 5px 0 0 0;
             text-transform: uppercase;
@@ -109,49 +107,56 @@
             display: flex; 
             flex-direction: column; 
             align-items: center;
-            justify-content: flex-start;
+            justify-content: space-between; /* Empuja el texto arriba y la foto abajo */
             box-sizing: border-box;
         }
         
         .live-info { 
             width: 100%; 
             text-align: center; 
-            margin-bottom: 8px; 
+            margin-top: 2px; /* Margen superior para clavarlo en las líneas del papel */
             flex-shrink: 0;
         }
         
         #np-artist { 
             color: var(--accent); 
-            font-weight: 900; 
+            font-family: 'Permanent Marker', cursive; /* Fuente de rotulador */
+            font-weight: 400; 
             margin: 0 0 2px 0; 
-            font-size: clamp(0.7rem, 3vw, 0.8rem); /* Texto adaptable */
+            font-size: clamp(0.95rem, 3.8vw, 1.15rem); /* Proporciones corregidas */
             text-transform: uppercase; 
-            letter-spacing: 1.5px; 
+            letter-spacing: 1px; 
+            transform: rotate(-1.5deg); /* Inclinación de trazo humano */
+            display: block;
         }
         
         #np-track { 
             color: #1a1a1a; 
-            font-weight: 800; 
+            font-family: 'Permanent Marker', cursive; /* Fuente de rotulador */
+            font-weight: 400; 
             margin: 0; 
-            font-size: clamp(0.9rem, 4vw, 1.1rem); /* Texto adaptable */
+            font-size: clamp(1.2rem, 4.8vw, 1.45rem); /* Estilo Sharpie grueso */
             text-transform: uppercase; 
             white-space: nowrap; 
             overflow: hidden; 
             text-overflow: ellipsis; 
             width: 100%;
+            transform: rotate(-0.5deg);
+            display: block;
         }
 
         #now-playing-img { 
-            height: 72%; 
-            max-width: 95%; /* Impide que reviente la caja por los lados */
+            height: 64%; /* Reducido un pelín para que la portada no invada el texto superior */
+            max-width: 90%; 
             aspect-ratio: 1/1; 
             border-radius: 8px; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
             object-fit: cover;
+            margin-bottom: 2%; /* Margen de aire inferior */
         }
 
         /* =========================================================
-           CONTROLES INFERIORES (Mantenido al 50% para proteger logo TDK)
+           CONTROLES INFERIORES (Protegiendo el logo de TDK)
            ========================================================= */
         .controls-area-footer { 
             position: absolute;
