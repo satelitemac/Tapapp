@@ -10,7 +10,13 @@
 
         body, html { 
             margin: 0; padding: 0; height: 100%; width: 100%; 
-            background: #000; color: white; font-family: 'Inter', sans-serif; overflow: hidden; 
+            background-color: #000;
+            background-image: url('fondo-cassette.jpg'); 
+            background-size: cover;
+            background-position: center top;
+            background-repeat: no-repeat;
+            color: #1a1a1a; 
+            font-family: 'Inter', sans-serif; overflow: hidden; 
         }
 
         .screen { 
@@ -23,24 +29,27 @@
             text-align: center;
             box-sizing: border-box;
             padding: 20px;
+            background: transparent; 
         }
         .active { display: flex; z-index: 10; }
-
+        
         .tt-logo {
             font-weight: 900; font-size: 2.2rem; 
             letter-spacing: -1px; text-transform: uppercase;
             margin-bottom: 20px;
+            color: #1a1a1a;
         }
 
+        /* Ajustamos el contenedor de la pantalla de peticiones sobre el papel */
         #sc-wait.active {
-            justify-content: space-between;
-            padding-top: 40px;
-            padding-bottom: calc(30px + env(safe-area-inset-bottom));
+            padding-top: 38vh; 
+            justify-content: flex-start;
         }
 
         #now-playing-container { 
-            flex: 1; display: flex; flex-direction: column; justify-content: center;
             width: 100%; max-width: 280px; min-height: 0;
+            margin-bottom: 20px;
+            display: flex; flex-direction: column; justify-content: center;
         }
         #now-playing-img { 
             width: 100%; aspect-ratio: 1/1; border-radius: 12px; 
@@ -48,17 +57,36 @@
         }
 
         .controls-area { width: 100%; max-width: 300px; }
-        .input-field { width: 100%; padding: 18px; margin-bottom: 10px; border-radius: 12px; border: none; background: #1a1a1a; color: white; text-align: center; font-size: 1rem; box-sizing: border-box; }
+        
+        .input-field { 
+            width: 100%; 
+            padding: 15px 10px; 
+            margin-bottom: 15px; 
+            border: none; 
+            background: transparent; 
+            border-bottom: 2px solid rgba(0,0,0,0.2); 
+            color: #1a1a1a; 
+            text-align: center; 
+            font-size: 1.1rem; 
+            font-weight: 800;
+            box-sizing: border-box; 
+        }
+        .input-field::placeholder { color: rgba(0,0,0,0.4); }
+        .input-field:focus { outline: none; border-bottom: 2px solid var(--accent); }
         
         .technics-btn { 
-            width: 100%; padding: 18px; border-radius: 4px; border: none; background: var(--tech-gray); color: #eee; 
-            font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px;
-            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.1), 0px 5px 0px #000;
+            width: 100%; padding: 18px; border-radius: 30px; border: none; 
+            background: var(--accent); color: white; 
+            font-weight: 800; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.2);
             display: flex; flex-direction: column; align-items: center;
+            margin-top: 10px;
+            cursor: pointer;
         }
-        .technics-btn:active { transform: translateY(3px); box-shadow: 0px 2px 0px #000; color: #00d4ff; }
-        .technics-label { font-size: 0.45rem; margin-top: 4px; opacity: 0.5; letter-spacing: 3px; }
-
+        .technics-btn:active { transform: translateY(3px); box-shadow: 0px 2px 0px rgba(0,0,0,0.2); }
+        
+        #sc-radar { background: rgba(0,0,0,0.8); color: white; }
+        #sc-radar .tt-logo { color: white; }
         .radar-btn { 
             width: 220px; height: 220px; border-radius: 50%; border: 10px solid white; 
             background: none; color: white; font-size: 1.8rem; font-weight: 900;
@@ -76,24 +104,22 @@
         <div class="controls-area">
             <input type="text" id="n" class="input-field" placeholder="Nombre">
             <input type="text" id="m" class="input-field" placeholder="Mesa">
-            <button class="technics-btn" onclick="init()" style="background: var(--accent); border-radius: 15px; box-shadow: none; padding: 20px;">ENTRAR</button>
+            <button class="technics-btn" onclick="init()">ENTRAR</button>
         </div>
     </div>
 
     <div id="sc-wait" class="screen">
-        <div class="tt-logo">TAPES & TAPAS</div>
         <div id="now-playing-container" style="display: none;">
             <div style="margin-bottom: 10px; text-align: center;">
                 <p id="np-artist" style="color: var(--accent); font-weight: 900; margin: 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px;"></p>
-                <p id="np-track" style="color: white; font-weight: 800; margin: 5px 0 10px 0; font-size: 1.1rem; text-transform: uppercase;"></p>
+                <p id="np-track" style="color: #1a1a1a; font-weight: 800; margin: 5px 0 10px 0; font-size: 1.1rem; text-transform: uppercase;"></p>
             </div>
             <img id="now-playing-img" src="">
         </div>
         <div class="controls-area">
             <input type="text" id="msg-dj" class="input-field" placeholder="¿Alguna petición?">
             <button class="technics-btn" onclick="sendDJ(event)">
-                <span id="btn-dj-text">ENVIAR AL DJ</span>
-                <span class="technics-label">START · STOP</span>
+                <span id="btn-dj-text">Enviar DJ</span>
             </button>
         </div>
     </div>
@@ -113,7 +139,6 @@
     let lastColor = "#ffffff";   
 
     window.onload = () => {
-        // 1. Lógica de sesión
         if (myId) { 
             showScreen('sc-wait'); 
             setupHardware(); 
@@ -121,8 +146,6 @@
             showScreen('sc-login'); 
         }
 
-        // 2. DESPERTADOR INVISIBLE (Sincronización inicial)
-        // Esto fuerza a que Render nos mande la portada actual al entrar
         fetch('https://tapapp.onrender.com/current_status')
             .then(() => console.log("Servidor despertado"))
             .catch(err => console.log("Error al despertar:", err));
@@ -169,7 +192,7 @@
             isFlashing = false;
             clearInterval(flashInt);
             document.getElementById('flash-overlay').style.display = "none";
-            document.body.style.backgroundColor = "#000";
+            document.body.style.backgroundColor = ""; 
             if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
             showScreen('sc-wait');
         }
@@ -188,7 +211,6 @@
             showScreen('sc-radar');
             const btn = document.getElementById('btn-p');
             btn.disabled = true; btn.innerText = "ESPERA";
-            document.body.style.backgroundColor = "#000";
         }
         
         if(data.action === "go_pulsar") {
@@ -199,7 +221,7 @@
         if(data.action === "winner_found") {
             const win = data.winner_id === myId;
             document.getElementById('btn-p').innerText = win ? "¡GANASTE!" : "CASI...";
-            document.body.style.backgroundColor = win ? "#2ecc71" : "#8b0000";
+            document.getElementById('sc-radar').style.backgroundColor = win ? "rgba(46, 204, 113, 0.9)" : "rgba(139, 0, 0, 0.9)";
         }
 
         if(data.action === "start_flashing") {
