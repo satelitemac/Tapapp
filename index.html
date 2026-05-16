@@ -22,20 +22,20 @@
             align-items: center;
         }
 
-        /* LIENZO COMPLETO: El casete se estira para ocupar TODO el alto/ancho del móvil */
+        /* CONTENEDOR TOTAL: Ocupa el 100% del lienzo del teléfono móvil */
         .app-container {
             position: relative;
             width: 100%;
             height: 100%;
-            max-width: 480px; /* Límite para emular pantalla de teléfono en PC o tablets */
+            max-width: 480px; /* Consistencia en pantallas más anchas o simulación de PC */
             background-image: url('fondo-cassette.jpg'); 
-            background-size: 100% 100%; /* ¡Clave! Elimina todo el aire y se expande al lienzo total del móvil */
-            background-position: center;
+            background-size: cover; /* Asegura que cubra toda la pantalla de arriba a abajo */
+            background-position: center top;
             background-repeat: no-repeat;
             box-sizing: border-box;
         }
 
-        /* Capas de pantallas absolutas */
+        /* Capas absolutas para las secciones */
         .screen { 
             display: none; 
             position: absolute;
@@ -47,75 +47,80 @@
         }
         .active { display: flex; z-index: 10; }
         
-        /* Pantalla de login (Botones abajo) */
+        /* Pantalla de bienvenida / Login */
         #sc-login .tt-logo {
             font-weight: 900; font-size: 2.2rem; color: var(--accent);
-            margin-top: 18vh;
+            margin-top: 15vh;
         }
 
-        /* LA CAJA MÁGICA (Zona de líneas de escritura del casete) */
-        /* Ajustamos las coordenadas en % para que encajen justo en la pegatina blanca */
+        /* LA CAJA DINÁMICA: Ajustada milimétricamente a la pegatina blanca del nuevo casete vertical */
         .cassette-label-box {
             position: absolute;
-            top: 25vh;      /* Ajusta este % si necesitas subir o bajar la caja en la pegatina */
-            left: 10%;
-            width: 80%;
-            height: 32vh;   /* Alto exacto del rectángulo de escritura */
+            top: 21vh;       /* Posición exacta en el eje vertical de las líneas de la cinta */
+            left: 12%;       /* Centrado horizontal respecto al cuerpo del casete */
+            width: 76%;      /* Ancho útil de la pegatina blanca */
+            height: 38vh;    /* Altura total que cubre el bloque para escribir */
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             box-sizing: border-box;
-            padding: 10px;
-            /* background: rgba(255,0,0,0.1); */ /* Descomenta esta línea para ver la caja invisible mientras pruebas */
+            padding: 8px;
+            /* background: rgba(255, 0, 0, 0.15); */ /* Descomenta para ver la caja durante las pruebas si es necesario */
         }
 
-        /* Contenido dinámico del servidor dentro de las líneas del casete */
+        /* Contenedor del Servidor (Contenido dinámico de música) */
         #now-playing-container { 
             width: 100%;
             height: 100%;
             display: flex; 
             flex-direction: column; 
             align-items: center;
-            justify-content: space-between; /* Distribuye arriba el texto y abajo la imagen */
+            justify-content: space-between; /* Texto arriba, portada abajo */
         }
         
         .live-info {
             width: 100%;
             text-align: center;
+            padding-top: 5px;
         }
+        
+        /* Nombre de artista en formato compacto superior */
         #np-artist { 
             color: var(--accent); 
             font-weight: 900; 
             margin: 0; 
-            font-size: 0.75rem; 
+            font-size: 0.8rem; 
             text-transform: uppercase; 
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
         }
+        
+        /* Nombre de la canción ocupando la línea principal */
         #np-track { 
             color: #1a1a1a; 
             font-weight: 800; 
             margin: 2px 0 0 0; 
-            font-size: 0.95rem; 
+            font-size: 1.1rem; 
             text-transform: uppercase;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        /* La portada del servidor ahora se comporta como un cuadrado perfecto integrado abajo */
+        /* Portada encajada en la sección central-inferior de la pegatina */
         #now-playing-img { 
-            height: 65%; /* Ocupa el espacio inferior de la pegatina sin pisar los textos */
+            height: 68%; /* Proporción limpia para no pisar los engranajes o textos */
             aspect-ratio: 1/1; 
             border-radius: 6px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15); 
             object-fit: cover;
+            margin-bottom: 4px;
         }
 
-        /* CONTROLES INFERIORES: Inputs y botones en la zona baja del casete */
+        /* CONTROLES INFERIORES: Posicionados sobre la parte baja del casete */
         .controls-area { 
             position: absolute;
-            bottom: 8vh; /* Colocado estratégicamente en la base del lienzo */
+            bottom: 7vh; /* Ajustado para quedar por encima del borde inferior de la pantalla */
             width: 80%; 
             display: flex;
             flex-direction: column;
@@ -124,7 +129,7 @@
         
         .input-field { 
             width: 100%; 
-            padding: 10px; 
+            padding: 12px; 
             margin-bottom: 12px; 
             border: none; 
             background: transparent; 
@@ -139,7 +144,7 @@
         .input-field:focus { outline: none; border-bottom: 2px solid var(--accent); }
         
         .technics-btn { 
-            width: 100%; padding: 14px; border-radius: 30px; border: none; 
+            width: 100%; padding: 15px; border-radius: 30px; border: none; 
             background: var(--accent); color: white; 
             font-weight: 800; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px;
             box-shadow: 0px 4px 12px rgba(0,0,0,0.2);
@@ -149,15 +154,15 @@
         }
         .technics-btn:active { transform: translateY(2px); }
         
-        /* Pantalla Radar (Se mantiene oscura sobre el lienzo) */
-        #sc-radar { background: rgba(0,0,0,0.9); color: white; }
+        /* Pantalla de alerta del Radar */
+        #sc-radar { background: rgba(0,0,0,0.92); color: white; }
         .radar-container {
             display: flex; height: 100%; width: 100%;
             flex-direction: column; align-items: center; justify-content: center;
         }
         .radar-btn { 
-            width: 160px; height: 160px; border-radius: 50%; border: 8px solid white; 
-            background: none; color: white; font-size: 1.6rem; font-weight: 900;
+            width: 170px; height: 170px; border-radius: 50%; border: 8px solid white; 
+            background: none; color: white; font-size: 1.7rem; font-weight: 900;
         }
 
         #flash-overlay { position:fixed; top:0; left:0; width:100%; height:100%; z-index:10000; display:none; pointer-events: none; }
@@ -254,7 +259,7 @@
             showScreen('sc-wait');
         }
 
-        /* Inyección robusta del contenido del servidor en las líneas */
+        /* Sincronización del contenido en tiempo real del servidor */
         if(data.action === "update_cover") {
             const container = document.getElementById('now-playing-container');
             if(data.url && data.url !== "") {
