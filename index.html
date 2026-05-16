@@ -277,9 +277,11 @@
             if (isFlashing) startFlashingLoop();
         }
         if(data.action === "hard_reset") { hardReset(); return; }
+        
         if(data.action === "reset") {
             isFlashing = false; clearInterval(flashInt);
             document.getElementById('flash-overlay').style.display = "none";
+            document.getElementById('sc-radar').style.backgroundColor = "rgba(0,0,0,0.92)"; // Limpieza del fondo
             if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
             showScreen('sc-wait');
         }
@@ -298,7 +300,9 @@
             showScreen('sc-radar');
             const btn = document.getElementById('btn-p');
             btn.disabled = true; btn.innerText = "ESPERA";
+            document.getElementById('sc-radar').style.backgroundColor = "rgba(0,0,0,0.92)"; // Limpieza de seguridad
         }
+        
         if(data.action === "go_pulsar") {
             const btn = document.getElementById('btn-p');
             btn.disabled = false; btn.innerText = "¡PUSH!";
