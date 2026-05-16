@@ -22,7 +22,7 @@
             align-items: center;
         }
 
-        /* EL LIENZO */
+        /* EL LIENZO: Mapeado al 100% de la pantalla del móvil */
         .app-container {
             position: relative;
             width: 100%;
@@ -44,6 +44,7 @@
         }
         .active { display: block; z-index: 10; }
         
+        /* Pantalla Login */
         #sc-login { display: flex; flex-direction: column; align-items: center; }
         #sc-login .tt-logo {
             font-weight: 900; font-size: 2.2rem; color: var(--accent);
@@ -54,32 +55,31 @@
         }
 
         /* =========================================================
-           LA CAJA DE LA PEGATINA (Ajusta el top y el height a tu gusto)
+           LA CAJA DE LA PEGATINA (Música: Texto arriba, Foto abajo)
            ========================================================= */
         .cassette-label-box {
             position: absolute;
-            top: 35%;      
+            top: 29.5%;      /* Ajusta este % para cuadrar el inicio de la pegatina blanca */
             left: 10%;       
             width: 80%;      
-            height: 52%;     
+            height: 36%;     /* Altura reducida: ahora solo cubre el espacio de la música */
             
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between; 
+            justify-content: flex-start; 
             box-sizing: border-box;
             padding: 2% 0;
 
-            /* BORDE ROJO PARA CALIBRAR (Bórralo cuando lo tengas cuadrado) */
+            /* BORDE ROJO PARA CALIBRAR (Bórralo cuando esté en su sitio) */
             border: 2px dashed red; 
         }
 
-        /* 1. SECCIÓN SUPERIOR: Texto arriba, Portada abajo */
         #now-playing-container { 
             width: 100%;
-            height: 65%; /* Le damos el 65% superior de la caja roja a la música */
+            height: 100%;
             display: flex; 
-            flex-direction: column; /* COMPOSICIÓN EN COLUMNA */
+            flex-direction: column; 
             align-items: center;
             justify-content: flex-start;
             box-sizing: border-box;
@@ -88,7 +88,7 @@
         .live-info { 
             width: 100%; 
             text-align: center; 
-            margin-bottom: 8px; /* Separación con la foto */
+            margin-bottom: 8px; 
         }
         
         #np-artist { 
@@ -113,23 +113,24 @@
         }
 
         #now-playing-img { 
-            height: 72%; /* Forzamos a que la imagen sea lo más grande posible dentro de su espacio */
-            max-height: 180px;
-            aspect-ratio: 1/1; /* Cuadrada perfecta */
+            height: 72%; /* Portada grande y destacada dentro de la pegatina */
+            aspect-ratio: 1/1; 
             border-radius: 8px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.25); 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
             object-fit: cover;
         }
 
-        /* 2. SECCIÓN INFERIOR: Controles del DJ */
-        .cassette-label-box .controls-area { 
-            width: 100%; 
-            height: 35%; /* El 35% restante para el formulario */
+        /* =========================================================
+           CONTROLES INFERIORES: Absolutos abajo al lado de TDK
+           ========================================================= */
+        #sc-wait .controls-area { 
+            position: absolute;
+            bottom: 6%; /* Colocado de forma fija abajo en la zona de plástico del logo TDK */
+            left: 10%;
+            width: 80%; 
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-end; 
-            padding: 0 5%;
             box-sizing: border-box;
         }
         
@@ -173,7 +174,6 @@
         <div id="sc-wait" class="screen">
             
             <div class="cassette-label-box">
-                
                 <div id="now-playing-container" style="display: none;">
                     <div class="live-info">
                         <p id="np-artist"></p>
@@ -181,15 +181,15 @@
                     </div>
                     <img id="now-playing-img" src="">
                 </div>
-                
-                <div class="controls-area">
-                    <input type="text" id="msg-dj" class="input-field" placeholder="¿Alguna petición?">
-                    <button class="technics-btn" onclick="sendDJ(event)">
-                        <span id="btn-dj-text">Enviar DJ</span>
-                    </button>
-                </div>
-
             </div>
+            
+            <div class="controls-area">
+                <input type="text" id="msg-dj" class="input-field" placeholder="¿Alguna petición?">
+                <button class="technics-btn" onclick="sendDJ(event)">
+                    <span id="btn-dj-text">Enviar DJ</span>
+                </button>
+            </div>
+
         </div>
 
         <div id="sc-radar" class="screen">
@@ -317,7 +317,7 @@
         input.value = "";
         const btnText = document.getElementById('btn-dj-text');
         const originalText = btnText.innerText;
-        btnText.innerText = "¡HECHO!";
+        btnText.innerText = "¡ENVIADO!";
         setTimeout(() => { btnText.innerText = originalText; }, 2000);
     }
 </script>
