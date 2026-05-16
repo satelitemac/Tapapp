@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>T&T | EVENT</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800;900&family=Permanent+Marker&display=swap" rel="stylesheet">
     <style>
         :root { 
             --accent: #ff5e00; 
@@ -58,7 +58,7 @@
            ========================================================= */
         .cassette-label-box {
             position: absolute;
-            top: 33%;      
+            top: 31%;      
             left: 10%;       
             width: 80%;      
             height: 50%;     
@@ -109,45 +109,52 @@
             display: flex; 
             flex-direction: column; 
             align-items: center;
-            justify-content: flex-start;
+            justify-content: space-between; /* Modificado para separar limpiamente el texto de la foto */
             box-sizing: border-box;
         }
         
         .live-info { 
             width: 100%; 
             text-align: center; 
-            margin-bottom: 8px; 
+            margin-bottom: auto; /* Empuja los textos hacia la parte superior (bajo los agujeros) */
             flex-shrink: 0;
         }
         
         #np-artist { 
             color: var(--accent); 
-            font-weight: 900; 
+            font-family: 'Permanent Marker', cursive; /* Efecto rotulador */
+            font-weight: 400; 
             margin: 0 0 2px 0; 
-            font-size: clamp(0.7rem, 3vw, 0.8rem); /* Texto adaptable */
+            font-size: clamp(0.95rem, 3.8vw, 1.10rem); /* Escalado para el tipo de fuente */
             text-transform: uppercase; 
             letter-spacing: 1.5px; 
+            transform: rotate(-1.5deg); /* Le da esa imperfección de escritura humana */
+            display: block;
         }
         
         #np-track { 
             color: #1a1a1a; 
-            font-weight: 800; 
+            font-family: 'Permanent Marker', cursive; /* Efecto rotulador */
+            font-weight: 400; 
             margin: 0; 
-            font-size: clamp(0.9rem, 4vw, 1.1rem); /* Texto adaptable */
+            font-size: clamp(1.2rem, 4.8vw, 1.45rem); /* Un poco más gordo, estilo Sharpie */
             text-transform: uppercase; 
             white-space: nowrap; 
             overflow: hidden; 
             text-overflow: ellipsis; 
             width: 100%;
+            transform: rotate(-0.5deg); /* Ligera rotación cruzada */
+            display: block;
         }
 
         #now-playing-img { 
-            height: 72%; 
+            height: 65%; /* Reducido un pelín para que la zona superior de escritura respire */
             max-width: 95%; /* Impide que reviente la caja por los lados */
             aspect-ratio: 1/1; 
             border-radius: 8px; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
             object-fit: cover;
+            margin-bottom: 2%; /* Margen de seguridad inferior */
         }
 
         /* =========================================================
