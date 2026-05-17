@@ -28,7 +28,7 @@ st.markdown("""<style>
     .history-label { 
         font-size: 1.4vh; 
         font-weight: 800; 
-        color: #ff4b4b; 
+        color: #000000; 
         text-transform: uppercase; 
         margin-bottom: 1vh; 
         display: block; 
