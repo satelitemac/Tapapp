@@ -147,13 +147,23 @@
         }
 
         #now-playing-img { 
-            height: 75%; /* Reducido un pelín para que la portada no invada el texto superior */
-            max-width: 90%; 
-            aspect-ratio: 1/1; 
+            /* 1. EL TRUCO DINÁMICO DEFINITIVO */
+            width: auto;         /* Deja que el ancho se calcule solo... */
+            height: 100%;        /* ...basado en la altura máxima que le permitamos */
+            max-height: 65%;     /* TOPE VERTICAL: Baja o sube este % para alejarla o acercarla a los textos */
+            max-width: 85%;      /* TOPE HORIZONTAL: Frena el crecimiento si el móvil es muy estrecho */
+            aspect-ratio: 1/1;   /* Obliga a la caja a ser un cuadrado geométrico a prueba de bombas */
+
+            /* 2. EL RECORTE INTERNO */
+            object-fit: cover;   /* Como la caja ahora SIEMPRE es un cuadrado, cover recortará limpiamente el archivo de imagen para rellenarlo sin deformarlo */
+
+            /* 3. POSICIÓN (Mover sin alterar el contenedor rojo) */
+            margin-top: 5px;     /* Empuja la foto un poco hacia abajo si quieres más aire con el título */
+            margin-bottom: 3%;   /* La separa del borde inferior de la pegatina */
+            
+            /* Estética */
             border-radius: 8px; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
-            object-fit: cover;
-            margin-bottom: 2%; /* Margen de aire inferior */
         }
 
         /* =========================================================
