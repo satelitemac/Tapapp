@@ -22,6 +22,12 @@
         .btn-dmx-off { background: transparent; color: white; border: 1px solid #444; }
         .btn-reset { background: transparent; color: #e74c3c; border: 1px solid #e74c3c; margin-top: 10px; font-size: 0.8rem; }
         .btn-nuke { background: #8b0000; color: white; padding: 5px 10px; font-size: 0.7rem; border-radius: 5px; border: none; cursor: pointer; }
+        /* Presets de Color y BPM */
+        .preset-row { display: flex; gap: 10px; margin-bottom: 15px; }
+        .preset-color { width: 40px; height: 40px; border-radius: 8px; border: 2px solid #444; cursor: pointer; transition: transform 0.1s; }
+        .preset-color:active { transform: scale(0.9); }
+        .preset-bpm { flex: 1; background: #222; color: var(--bpm); border: 1px solid #444; border-radius: 5px; padding: 8px; font-family: 'Space Mono'; cursor: pointer; font-size: 0.9rem; font-weight: bold; }
+        .preset-bpm:active { background: var(--bpm); color: black; }
         
         /* Estilos para el TAP TEMPO */
         .btn-tap { background: var(--bpm); color: black; height: 80px; font-size: 1.5rem; }
