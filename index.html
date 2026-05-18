@@ -240,7 +240,21 @@
 
     window.onload = () => {
         if (myId) { showScreen('sc-wait'); setupHardware(); } else { showScreen('sc-login'); }
-        fetch('https://tapapp.onrender.com/current_status').catch(err => console.log(err));
+        
+        // El verdadero despertador: recogemos la info del server y la pintamos
+        fetch('https://tapapp.onrender.com/current_status')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('now-playing-container');
+                // OJO: El servidor Python envía los datos dentro de "info"
+                if(data && data.info && data.info.url && data.info.url !== "") {
+                    document.getElementById('now-playing-img').src = data.info.url;
+                    document.getElementById('np-artist').innerText = data.info.artist || "ARTISTA";
+                    document.getElementById('np-track').innerText = data.info.track || "PISTA";
+                    container.style.display = "block"; // Aseguramos que la caja se vea
+                }
+            })
+            .catch(err => console.log("Servidor arrancando o sin música:", err));
     };
 
     socket.onopen = () => { if (myId) socket.send(JSON.stringify({type:"presence", user_id: myId})); };
