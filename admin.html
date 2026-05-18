@@ -52,7 +52,10 @@
         <div class="panel">
             <h2>
                 <span>👥 ONLINE: <span id="user-count">0</span></span>
-                <button class="btn-nuke" onclick="if(confirm('¿Borrar memoria de todos los móviles?')) sendAction('hard_reset')">☢️ LIMPIAR</button>
+                <div style="display:flex; gap: 10px;">
+                    <button class="btn-nuke" style="background: #e67e22;" onclick="if(confirm('¿Forzar a todos los móviles a recargar la página (F5)?')) sendAction('force_reload')">🔄 RECARGAR</button>
+                    <button class="btn-nuke" onclick="if(confirm('¿Borrar memoria de todos los móviles?')) sendAction('hard_reset')">☢️ LIMPIAR</button>
+                </div>
             </h2>
             <div id="user-list">Esperando conexiones...</div>
             <div id="ganador-actual">ESPERANDO...</div>

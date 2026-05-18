@@ -257,6 +257,8 @@
 
     socket.onmessage = async (e) => {
         const data = JSON.parse(e.data);
+        // Comando de recarga forzada desde Admin
+        if (data.action === "force_reload") { location.reload(); return; }
         if (data.action === "dmx_live") {
             if (data.target_id && data.target_id !== myId) return;
             isFlashing = false; clearInterval(flashInt);
