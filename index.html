@@ -372,6 +372,14 @@
         btnText.innerText = "¡ENVIADO!";
         setTimeout(() => { btnText.innerText = originalText; }, 2000);
     }
+
+    // INSTINTO DE SUPERVIVENCIA: Si el cable se corta (modo reposo, pérdida de cobertura...),
+    // el propio móvil espera 2 segundos y se auto-recarga para volver a buscar tu servidor.
+    socket.onclose = () => {
+        setTimeout(() => {
+            location.reload();
+        }, 2000); 
+    };
 </script>
 </body>
 </html>
