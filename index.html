@@ -123,15 +123,23 @@
 
         /* PORTADA MÚSICA */
         #now-playing-img { 
-            width: auto;         
-            height: 100%;        
-            max-height: 90%;     
-            max-width: 90%;      
-            aspect-ratio: 1/1;   
-            object-fit: cover;   
+            /* 1. 🎛️ CONTROLES DE TAMAÑO (La clave está aquí): */
+            width: auto;          /* Deja que el ancho se calcule automáticamente basado en el alto */
+            
+            /* 🛑 CORRECCIÓN CRÍTICA: Cambia height 100% por height auto */
+            height: auto;         
+            
+            /* 📏 LÍMITES VERTICALES (Achícalos para separarla del botón): */
+            max-height: 65%;      /* Prueba bajando esto a 60% o 55% si aún la ves grande */
+            max-width: 95%;       /* Límite horizontal */
+
+            /* 2. PROPORCIONES ANTI-DEFORMACIÓN: */
+            aspect-ratio: 1/1;    /* Obliga a que la caja sea un cuadrado perfecto */
+            object-fit: cover;    /* Recorta la imagen limpiamente por dentro para rellenar el cuadrado sin deformarla */
+            
+            /* 3. ESTÉTICA: */
             border-radius: 8px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
-            /* Eliminados los márgenes, la nueva caja la centra automáticamente */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6); /* Sombra más oscura para la casete negra */
         }
 
         /* CONTROLES INFERIORES */
