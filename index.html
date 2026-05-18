@@ -11,7 +11,6 @@
             --tech-gray: #868585; 
         }
 
-        /* FONDO GENERAL EN NEGRO: Esto creará las franjas cuando sea necesario */
         body, html { 
             margin: 0; padding: 0; height: 100%; width: 100%; 
             background-color: #000; 
@@ -23,18 +22,12 @@
             align-items: center;
         }
 
-        /* =========================================================
-           EL LIENZO BLINDADO (Matemáticamente proporcionado)
-           ========================================================= */
         .app-container {
             position: relative;
             width: 100%;
             height: 100%;
-            
-            /* LA MAGIA: Calculamos el ancho y alto máximos según la proporción real de un móvil moderno (9:19.5). */
             max-width: calc(100vh * (9 / 19.5));
             max-height: calc(100vw * (19.5 / 9));
-            
             background-image: url('fondo-cassette.jpg'); 
             background-size: 100% 100%; 
             background-position: center top;
@@ -51,28 +44,21 @@
         }
         .active { display: block; z-index: 10; }
 
-        /* =========================================================
-           LA CAJA DE LA PEGATINA (Ahora más alta hacia arriba)
-           ========================================================= */
+        /* CAJA LOGIN */
         .cassette-label-box {
             position: absolute;
-            top: 18%;       /* SUBIDO: Ahora empieza justo debajo de los agujeros centrales */
+            top: 31%; /* Centrado en la pegatina inferior para el login */
             left: 10%;       
             width: 80%;      
-            height: 52%;    /* AMPLIADO: Cubre todo el lienzo de la pegatina blanca */
-            
+            height: 52%;    
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center; 
             box-sizing: border-box;
             padding: 2% 0;
-            
-            /* Cambia a '2px dashed red' si necesitas verificar los bordes visualmente */
-            border: 0px dashed red; 
         }
 
-        /* COMPOSICIÓN INTERNA DEL LOGIN */
         .login-container {
             width: 100%;
             height: 100%;
@@ -100,43 +86,32 @@
             align-items: center;
         }
 
-        /* COMPOSICIÓN INTERNA DE LA MÚSICA */
-        #now-playing-container { 
-            width: 100%;
-            height: 100%;
-            display: flex; 
-            flex-direction: column; 
-            align-items: center;
-            justify-content: space-between; /* Empuja el texto arriba y la foto abajo */
-            box-sizing: border-box;
-        }
-        
+        /* TEXTOS DE MÚSICA */
         .live-info { 
             width: 100%; 
             text-align: center; 
-            margin-top: -70px; /* Margen superior para clavarlo en las líneas del papel */
-            flex-shrink: 0;
+            /* Sin márgenes negativos, ya no hacen falta */
         }
         
         #np-artist { 
             color: var(--accent); 
-            font-family: 'Permanent Marker', cursive; /* Fuente de rotulador */
+            font-family: 'Permanent Marker', cursive; 
             font-weight: 800; 
-            margin: 0 0 0px 0; 
-            font-size: clamp(0.95rem, 4vw, 1.15rem); /* Proporciones corregidas */
+            margin: 0; 
+            font-size: clamp(0.95rem, 4vw, 1.15rem); 
             text-transform: uppercase; 
             letter-spacing: 1px; 
-            transform: rotate(-1.5deg); /* Inclinación de trazo humano */
+            transform: rotate(-1.5deg); 
             display: block;
         }
         
         #np-track { 
             color: #b1afaf; 
-            font-family: 'Permanent Marker', cursive; /* Fuente de rotulador */
+            font-family: 'Permanent Marker', cursive; 
             font-weight: 400; 
             margin: 0; 
-            line-height: 1.1;   /* <-- AÑADE ESTO: Achica el espacio superior de la propia canción */
-            font-size: clamp(1.2rem, 4.8vw, 1.45rem); /* Estilo Sharpie grueso */
+            line-height: 1.1;   
+            font-size: clamp(1.2rem, 4.8vw, 1.45rem); 
             text-transform: uppercase; 
             white-space: nowrap; 
             overflow: hidden; 
@@ -146,29 +121,20 @@
             display: block;
         }
 
+        /* PORTADA MÚSICA */
         #now-playing-img { 
-            /* 1. EL TRUCO DINÁMICO DEFINITIVO */
-            width: auto;         /* Deja que el ancho se calcule solo... */
-            height: 100%;        /* ...basado en la altura máxima que le permitamos */
-            max-height: 70%;     /* TOPE VERTICAL: Baja o sube este % para alejarla o acercarla a los textos */
-            max-width: 95%;      /* TOPE HORIZONTAL: Frena el crecimiento si el móvil es muy estrecho */
-            aspect-ratio: 1/1;   /* Obliga a la caja a ser un cuadrado geométrico a prueba de bombas */
-
-            /* 2. EL RECORTE INTERNO */
-            object-fit: cover;   /* Como la caja ahora SIEMPRE es un cuadrado, cover recortará limpiamente el archivo de imagen para rellenarlo sin deformarlo */
-
-            /* 3. POSICIÓN (Mover sin alterar el contenedor rojo) */
-            margin-top: 40px;     /* Empuja la foto un poco hacia abajo si quieres más aire con el título */
-            margin-bottom: 3%;   /* La separa del borde inferior de la pegatina */
-            
-            /* Estética */
+            width: auto;         
+            height: 100%;        
+            max-height: 90%;     
+            max-width: 90%;      
+            aspect-ratio: 1/1;   
+            object-fit: cover;   
             border-radius: 8px; 
             box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
+            /* Eliminados los márgenes, la nueva caja la centra automáticamente */
         }
 
-        /* =========================================================
-           CONTROLES INFERIORES (Protegiendo el logo de TDK)
-           ========================================================= */
+        /* CONTROLES INFERIORES */
         .controls-area-footer { 
             position: absolute;
             bottom: 12%; 
@@ -196,7 +162,6 @@
         }
         .technics-btn:active { transform: translateY(2px); }
         
-        /* Pantalla Radar */
         #sc-radar { display: none; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.92); color: white; position: absolute; top:0; left:0; width:100%; height:100%; z-index: 20;}
         #sc-radar.active { display: flex; }
         .radar-btn { width: 170px; height: 170px; border-radius: 50%; border: 8px solid white; background: none; color: white; font-size: 1.7rem; font-weight: 900; }
@@ -225,14 +190,19 @@
         </div>
 
         <div id="sc-wait" class="screen">
-            <div class="cassette-label-box">
-                <div id="now-playing-container" style="display: none;">
+            <div id="now-playing-container" style="display: none; position: absolute; top:0; left:0; width: 100%; height: 100%;">
+                
+                <div style="position: absolute; top: 8.5%; left: 10%; width: 80%; height: 8%; display: flex; align-items: center; justify-content: center;">
                     <div class="live-info">
                         <p id="np-artist"></p>
                         <p id="np-track"></p>
                     </div>
+                </div>
+                
+                <div style="position: absolute; top: 31%; left: 10%; width: 80%; height: 54%; display: flex; justify-content: center; align-items: center;">
                     <img id="now-playing-img" src="">
                 </div>
+
             </div>
             
             <div class="controls-area-footer">
@@ -297,7 +267,7 @@
         if(data.action === "reset") {
             isFlashing = false; clearInterval(flashInt);
             document.getElementById('flash-overlay').style.display = "none";
-            document.getElementById('sc-radar').style.backgroundColor = "rgba(0,0,0,0.92)"; // Limpieza del fondo
+            document.getElementById('sc-radar').style.backgroundColor = "rgba(0,0,0,0.92)"; 
             if(videoTrack) videoTrack.applyConstraints({advanced:[{torch: false}]}).catch(()=>{});
             showScreen('sc-wait');
         }
@@ -308,7 +278,8 @@
                 document.getElementById('now-playing-img').src = data.url;
                 document.getElementById('np-artist').innerText = data.artist || "ARTISTA";
                 document.getElementById('np-track').innerText = data.track || "PISTA";
-                container.style.display = "flex"; 
+                // Modificado a block para la nueva estructura
+                container.style.display = "block"; 
             } else { container.style.display = "none"; }
         }
 
@@ -316,7 +287,7 @@
             showScreen('sc-radar');
             const btn = document.getElementById('btn-p');
             btn.disabled = true; btn.innerText = "ESPERA";
-            document.getElementById('sc-radar').style.backgroundColor = "rgba(0,0,0,0.92)"; // Limpieza de seguridad
+            document.getElementById('sc-radar').style.backgroundColor = "rgba(0,0,0,0.92)"; 
         }
         
         if(data.action === "go_pulsar") {
