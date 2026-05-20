@@ -44,6 +44,20 @@ st.markdown("""<style>
         margin-top: -3px;
     }
     .expand-btn:hover { background: #ff4b4b; color: white; }
+
+    /* 🟢 FORZAR MODALES (POP-UPS) OSCUROS EN ANDROID/iOS MODO CLARO */
+    div[data-testid="stDialog"] > div, 
+    div[role="dialog"] {
+        background-color: #111111 !important;
+        border: 1px solid #333 !important;
+    }
+    div[data-testid="stDialog"] h2, 
+    div[role="dialog"] h2 {
+        color: #ffffff !important;
+    }
+    button[aria-label="Close"] {
+        color: #ffffff !important;
+    }
 </style>""", unsafe_allow_html=True)
 
 URI, USER, PASS = "neo4j+s://3ba4e632.databases.neo4j.io", "3ba4e632", "MWwAJKrv6xxOC3cI17CR5-oKjCtKyN9IMnjwZa5KYKI"
