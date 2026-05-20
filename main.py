@@ -139,16 +139,16 @@ d = st.session_state.last_d
 p = st.session_state.last_p
 
 # --- 📝 FUNCIONES PARA MODALES (POP-UPS) ---
-@st.experimental_dialog("TRACK HISTORY", width="large")
+@st.dialog("TRACK HISTORY", width="large")
 def show_history_modal(text):
     st.markdown(f"<div style='font-size: 1.8vh; line-height: 1.6; color: #eee;'>{text}</div>", unsafe_allow_html=True)
 
-@st.experimental_dialog("ARTIST PROFILE", width="large")
+@st.dialog("ARTIST PROFILE", width="large")
 def show_profile_modal(name, text):
     st.markdown(f"<h3 style='color: #ff4b4b; text-transform: uppercase;'>{name}</h3>", unsafe_allow_html=True)
     st.markdown(f"<div style='font-size: 1.8vh; line-height: 1.6; color: #eee;'>{text}</div>", unsafe_allow_html=True)
 
-@st.experimental_dialog("PRODUCTION CREDITS", width="large")
+@st.dialog("PRODUCTION CREDITS", width="large")
 def show_credits_modal(credits_list):
     html_credits = "".join([f"<div style='font-size: 1.6vh; color: #ddd; padding: 6px 0; border-bottom: 1px solid #333;'><b>{c['role']}:</b> <span style='color: #ff9900;'>{c['name']}</span></div>" for c in credits_list])
     st.markdown(html_credits, unsafe_allow_html=True)
