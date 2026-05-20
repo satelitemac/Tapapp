@@ -129,7 +129,10 @@ if d:
     # --- CORRECCIÓN 1: BLINDAJE DE TÍTULO ---
     titulo_raw = d.get('titulo_original')
     if not titulo_raw:
-        titulo_raw = d.get('son', {}).get('name', " & ".join([a.get('name', 'UNKNOWN') for a in artistas]))
+        # ELIMINAMOS la búsqueda de 'son' que nos traía la canción, 
+        # y construimos el título directamente con los artistas.
+        titulo_raw = " & ".join([a.get('name', 'UNKNOWN') for a in artistas])
+        
     nombres_display = str(titulo_raw).upper()
     # ----------------------------------------
     
