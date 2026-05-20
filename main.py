@@ -29,6 +29,21 @@ st.markdown("""<style>
     iframe[title="streamlit_agraph.agraph"] { height: 75vh !important; }
     div[data-testid="stButton"] button p, div[data-testid="stLinkButton"] a p { font-size: 1.1vh !important; font-weight: 800 !important; }
     div[data-testid="stButton"] button, div[data-testid="stLinkButton"] a { padding-top: 0.4rem !important; padding-bottom: 0.4rem !important; }
+    
+    /* Estilo para los botones de expansión */
+    .expand-btn {
+        background: rgba(255, 75, 75, 0.2);
+        color: #ff4b4b;
+        border: 1px solid #ff4b4b;
+        border-radius: 4px;
+        padding: 2px 8px;
+        font-size: 1vh;
+        font-weight: bold;
+        cursor: pointer;
+        float: right;
+        margin-top: -3px;
+    }
+    .expand-btn:hover { background: #ff4b4b; color: white; }
 </style>""", unsafe_allow_html=True)
 
 URI, USER, PASS = "neo4j+s://3ba4e632.databases.neo4j.io", "3ba4e632", "MWwAJKrv6xxOC3cI17CR5-oKjCtKyN9IMnjwZa5KYKI"
@@ -123,6 +138,21 @@ cloud_watcher()
 d = st.session_state.last_d
 p = st.session_state.last_p
 
+# --- 📝 FUNCIONES PARA MODALES (POP-UPS) ---
+@st.experimental_dialog("TRACK HISTORY", width="large")
+def show_history_modal(text):
+    st.markdown(f"<div style='font-size: 1.8vh; line-height: 1.6; color: #eee;'>{text}</div>", unsafe_allow_html=True)
+
+@st.experimental_dialog("ARTIST PROFILE", width="large")
+def show_profile_modal(name, text):
+    st.markdown(f"<h3 style='color: #ff4b4b; text-transform: uppercase;'>{name}</h3>", unsafe_allow_html=True)
+    st.markdown(f"<div style='font-size: 1.8vh; line-height: 1.6; color: #eee;'>{text}</div>", unsafe_allow_html=True)
+
+@st.experimental_dialog("PRODUCTION CREDITS", width="large")
+def show_credits_modal(credits_list):
+    html_credits = "".join([f"<div style='font-size: 1.6vh; color: #ddd; padding: 6px 0; border-bottom: 1px solid #333;'><b>{c['role']}:</b> <span style='color: #ff9900;'>{c['name']}</span></div>" for c in credits_list])
+    st.markdown(html_credits, unsafe_allow_html=True)
+
 if d:
     artistas = d['nodos_artistas']
     
@@ -200,10 +230,14 @@ if d:
             st.markdown(f'<div class="img-box"><img src="{main_img}" onerror="this.onerror=null; this.src=\'{VINILO_FALLBACK}\';"></div>', unsafe_allow_html=True)
         with c3:
             wiki_url = primer_art.get('wiki_url') or primer_art.get('wikipedia')
-            if not wiki_url and isinstance(primer_art.get('wiki'), str) and primer_art.get('wiki').startswith('http'): wiki_url = primer_art.get('wiki')
-            if not wiki_url: wiki_url = f"https://www.google.com/search?q={urllib.parse.quote(primer_art['name'] + ' wikipedia')}"
+            if not wiki_url and isinstance(primer_art.get('wiki'), str) and primer_art.get('wiki').startswith('http'):
+                wiki_url = primer_art.get('wiki')
+            if not wiki_url:
+                wiki_url = f"https://www.google.com/search?q={urllib.parse.quote(primer_art['name'] + ' wikipedia')}"
+
             ws_query = f"{primer_art['name']} {d['son']['name']}"
             ws_url = f"https://www.whosampled.com/search/?q={urllib.parse.quote(ws_query)}"
+
             col_b1, col_b2, col_b3, col_b4, col_b5 = st.columns(5)
             with col_b1: st.button("GRAPH", on_click=lambda: setattr(st.session_state, "mapa_abierto", True), use_container_width=True)
             with col_b2: st.link_button("DISCOGS", d['r'].get('discogs', "#"), use_container_width=True)
@@ -211,31 +245,68 @@ if d:
             with col_b4: st.link_button("SAMPLES", ws_url, use_container_width=True) 
             with col_b5:
                 if st.button("LYRICS", use_container_width=True): st.session_state.mostrar_letras = not st.session_state.mostrar_letras
+
+            # --- CAJA MAESTRA (VERSIÓN CON MODALES) ---
             estilos = d['estilos_oficiales'] or []
             gen_str = " • ".join(estilos).upper() if estilos else "ELECTRONIC"
-            c3_html = f'''<div class="c3-wrapper"><div class="radar-box"><span class="label-tag">Version / Remix</span><span class="value-text remix-highlight">{d['remix_name'] or "ORIGINAL MIX"}</span><span class="label-tag">Discogs Styles</span><span class="value-text">{gen_str}</span><span class="label-tag">Label / Year</span><span class="value-text">{d['sello'] or "---"} ({d['anio'] or "---"})</span></div>'''
-            valid_credits = [c for c in d['creditos_nodos'] if c.get('name')]
-            if valid_credits:
-                c3_html += '<span class="label-tag" style="margin-bottom:0.5vh;">Production Credits</span><div class="credits-container">'
-                c3_html += "".join([f'<div class="credit-item"><b>{c["role"]}:</b> {c["name"]}</div>' for c in valid_credits])
-                c3_html += '</div>'
-            c3_html += '<div class="bio-container">'
-            if st.session_state.mostrar_letras:
-                letras_txt = get_lyrics(primer_art['name'], d['son']['name'])
-                c3_html += f'''<div class="bio-box" style="border-left: 3px solid #ff00ff; background: rgba(255, 0, 255, 0.05);"><span class="bio-label" style="color: #ff00ff; margin-bottom: 5px;">🎵 LYRICS</span><div style="font-size: 1.4vh; line-height: 1.4; color: #eee;">{letras_txt}</div></div>'''
-            historia_txt = d['son'].get('historia', "")
-            if historia_txt and historia_txt != "---": c3_html += f'''<div class="bio-box" style="border-left: 3px solid #00ffcc; background: rgba(0, 255, 204, 0.05);"><span class="bio-label" style="color: #00ffcc;">Track History</span>{clean_bio(historia_txt)}</div>'''
-            track_wiki = d['son'].get('wiki') or d['r'].get('notas') or d['r'].get('notes')
-            if track_wiki and track_wiki != "---" and not str(track_wiki).startswith("http"): c3_html += f'''<div class="bio-box" style="border-left: 3px solid #ffd700; background: rgba(255, 215, 0, 0.05);"><span class="bio-label" style="color: #ffd700;">Track Notes / Wiki</span>{clean_bio(str(track_wiki))}</div>'''
-            for a in artistas:
-                b_raw = a.get('bio', "")
-                b_text = b_raw[0] if isinstance(b_raw, list) and b_raw else b_raw
-                if b_text and b_text != "---": c3_html += f'''<div class="bio-box"><span class="bio-label">{a['name'].upper()} Profile</span>{clean_bio(b_text)}</div>'''
-                perfil_raw = a.get('perfil') or a.get('profile')
-                if not perfil_raw and isinstance(a.get('wiki'), str) and not a.get('wiki').startswith('http'): perfil_raw = a.get('wiki') 
-                perfil_txt = perfil_raw[0] if isinstance(perfil_raw, list) and perfil_raw else perfil_raw
-                if perfil_txt and perfil_txt != "---": c3_html += f'''<div class="bio-box" style="border-left: 3px solid #ff9900; background: rgba(255, 153, 0, 0.05);"><span class="bio-label" style="color: #ff9900;">{a['name'].upper()} Discogs / Wiki</span>{clean_bio(perfil_txt)}</div>'''
-            c3_html += '</div></div>'
-            st.markdown(c3_html, unsafe_allow_html=True)
+            
+            # 1. Info básica (Radar Box)
+            st.markdown(f'''
+                <div class="radar-box">
+                    <span class="label-tag">Version / Remix</span>
+                    <span class="value-text remix-highlight">{d['remix_name'] or "ORIGINAL MIX"}</span>
+                    <span class="label-tag">Discogs Styles</span>
+                    <span class="value-text">{gen_str}</span>
+                    <span class="label-tag">Label / Year</span>
+                    <span class="value-text">{d['sello'] or "---"} ({d['anio'] or "---"})</span>
+                </div>
+            ''', unsafe_allow_html=True)
+            
+            # Creamos un contenedor con scroll nativo de Streamlit para el resto
+            with st.container(height=500, border=False):
+                valid_credits = [c for c in d['creditos_nodos'] if c.get('name')]
+                if valid_credits:
+                    col_cred, col_btn_cred = st.columns([4, 1])
+                    with col_cred:
+                        st.markdown('<span class="label-tag" style="margin-bottom:0.5vh;">Production Credits</span>', unsafe_allow_html=True)
+                    with col_btn_cred:
+                        if st.button("➕ VER", key="btn_cred", use_container_width=True):
+                            show_credits_modal(valid_credits)
+                    
+                    cred_preview = "".join([f'<div class="credit-item"><b>{c["role"]}:</b> {c["name"]}</div>' for c in valid_credits[:3]]) # Solo enseñamos 3
+                    if len(valid_credits) > 3: cred_preview += '<div class="credit-item" style="color:#ff4b4b;">... y más (Ver)</div>'
+                    st.markdown(f'<div class="credits-container">{cred_preview}</div>', unsafe_allow_html=True)
+
+                if st.session_state.mostrar_letras:
+                    letras_txt = get_lyrics(primer_art['name'], d['son']['name'])
+                    st.markdown(f'''<div class="bio-box" style="border-left: 3px solid #ff00ff; background: rgba(255, 0, 255, 0.05);"><span class="bio-label" style="color: #ff00ff; margin-bottom: 5px;">🎵 LYRICS</span><div style="font-size: 1.4vh; line-height: 1.4; color: #eee; max-height: 150px; overflow-y: hidden;">{letras_txt}</div></div>''', unsafe_allow_html=True)
+
+                historia_txt = clean_bio(d['son'].get('historia', ""))
+                if historia_txt and historia_txt != "---":
+                    col_hist, col_btn_hist = st.columns([4, 1])
+                    with col_hist:
+                        st.markdown('<span class="bio-label" style="color: #00ffcc;">Track History</span>', unsafe_allow_html=True)
+                    with col_btn_hist:
+                        if st.button("➕ VER", key="btn_hist", use_container_width=True):
+                            show_history_modal(historia_txt)
+                    
+                    st.markdown(f'<div class="bio-box" style="border-left: 3px solid #00ffcc; background: rgba(0, 255, 204, 0.05); max-height: 60px; overflow:hidden;">{historia_txt}</div>', unsafe_allow_html=True)
+
+                track_wiki = d['son'].get('wiki') or d['r'].get('notas') or d['r'].get('notes')
+                if track_wiki and track_wiki != "---" and not str(track_wiki).startswith("http"):
+                    st.markdown(f'''<div class="bio-box" style="border-left: 3px solid #ffd700; background: rgba(255, 215, 0, 0.05);"><span class="bio-label" style="color: #ffd700;">Track Notes / Wiki</span>{clean_bio(str(track_wiki))}</div>''', unsafe_allow_html=True)
+                    
+                for i, a in enumerate(artistas):
+                    b_raw = a.get('bio', "")
+                    b_text = clean_bio(b_raw[0] if isinstance(b_raw, list) and b_raw else b_raw)
+                    if b_text and b_text != "---":
+                        col_bio, col_btn_bio = st.columns([4, 1])
+                        with col_bio:
+                            st.markdown(f'<span class="bio-label">{a["name"].upper()} Profile</span>', unsafe_allow_html=True)
+                        with col_btn_bio:
+                            if st.button("➕ VER", key=f"btn_bio_{i}", use_container_width=True):
+                                show_profile_modal(a["name"], b_text)
+                        
+                        st.markdown(f'<div class="bio-box" style="max-height: 60px; overflow:hidden;">{b_text}</div>', unsafe_allow_html=True)
 else:
     st.markdown('<div style="color:#222; text-align:center; padding-top:45vh;">📡 STANDBY FOR DATA...</div>', unsafe_allow_html=True)
