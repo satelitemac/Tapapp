@@ -271,8 +271,11 @@
 
     socket.onmessage = async (e) => {
         const data = JSON.parse(e.data);
-        // Comando de recarga forzada desde Admin
+        
+        // 1. Comando de recarga forzada
         if (data.action === "force_reload") { location.reload(); return; }
+
+        // 2. Comando DMX de Linterna (Torch) - TU CÓDIGO ORIGINAL
         if (data.action === "dmx_live") {
             if (data.target_id && data.target_id !== myId) return;
             isFlashing = false; clearInterval(flashInt);
@@ -282,6 +285,24 @@
             if (videoTrack) videoTrack.applyConstraints({advanced: [{ torch: data.torch }]}).catch(() => {});
             return; 
         }
+
+        // 3. NUEVO: Comando FLASH (Para luces de pantalla)
+        if (data.action === "flash") {
+            if (data.target_id && data.target_id !== myId) return;
+            const overlay = document.getElementById('flash-overlay');
+            overlay.style.display = "block";
+            overlay.style.backgroundColor = data.color;
+            return;
+        }
+
+        // 4. NUEVO: Comando CLEAR FLASH (Apagar luces)
+        if (data.action === "clear_flash") {
+            const overlay = document.getElementById('flash-overlay');
+            overlay.style.display = "none";
+            return;
+        }
+
+        // 5. Otros comandos originales de tu app
         if (data.action === "set_bpm") {
             currentFlashSpeed = Math.round((60000 / data.bpm) / 2);
             if (isFlashing) startFlashingLoop();
@@ -302,18 +323,17 @@
                 document.getElementById('now-playing-img').src = data.url;
                 document.getElementById('np-artist').innerText = data.artist || "ARTISTA";
                 document.getElementById('np-track').innerText = data.track || "PISTA";
-                // Modificado a block para la nueva estructura
                 container.style.display = "block"; 
             } else { container.style.display = "none"; }
         }
 
+        // ... mantén el resto de tus condiciones (prepare_contest, go_pulsar, etc.) igual que antes
         if(data.action === "prepare_contest") {
             showScreen('sc-radar');
             const btn = document.getElementById('btn-p');
             btn.disabled = true; btn.innerText = "ESPERA";
             document.getElementById('sc-radar').style.backgroundColor = "rgba(0,0,0,0.92)"; 
         }
-        
         if(data.action === "go_pulsar") {
             const btn = document.getElementById('btn-p');
             btn.disabled = false; btn.innerText = "¡PUSH!";
