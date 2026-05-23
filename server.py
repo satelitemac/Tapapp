@@ -77,15 +77,19 @@ async def websocket_endpoint(websocket: WebSocket):
             
             # --- LA MAGIA: EL ENRUTADOR DMX ---
             # El Bridge local nos envía un paquete de luz destinado a un móvil concreto
-            elif message.get("action") in ["flash", "clear_flash"]:
+            elif message.get("action") in ["flash", "clear_flash", "dmx_live"]:
                 if dmx_mode: # Solo obedecemos si el Admin ha encendido el DMX
                     target = message.get("target_id")
-                    if target in active_users:
+                    if target and target in active_users:
                         # Reenviamos la orden de luz exacta al móvil destinatario
                         msg_out = {"action": message.get("action")}
                         if "color" in message:
                             msg_out["color"] = message["color"]
-                        asyncio.create_task(safe_send(active_users[target], json.dumps(msg_out)))
+                        # Enviamos solo a ese usuario
+                        await active_users[target].send_text(json.dumps(msg_out))
+                    else:
+                        # Si no hay target específico, hacemos broadcast a todos
+                        await broadcast(message)
 
             # --- JUEGO RULETA ---
             elif message.get("type") == "player_click":
