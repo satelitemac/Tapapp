@@ -48,23 +48,32 @@ async def bridge():
             for s in sockets:
                 try:
                     data, addr = s.recvfrom(1024)
-                    dmx = data[18:] # Saltamos la cabecera Art-Net
+                    # La cabecera Art-Net mide 18 bytes. Los datos empiezan en el byte 18.
+                    dmx = data[18:] 
                     
                     if not has_signal and len(dmx) > 0:
-                        print(f"✅ ¡SEÑAL DETECTADA en puerto {s.getsockname()[1]}! Viene de {addr}")
+                        print(f"✅ ¡SEÑAL DETECTADA en puerto {s.getsockname()[1]}!")
                         has_signal = True
 
-                    if len(user_list) > 0 and len(dmx) >= 3:
+                    # OJO: Cambiamos el límite de 3 a 4 canales por dispositivo
+                    if len(user_list) > 0 and len(dmx) >= 4:
                         for i, u_id in enumerate(user_list):
-                            base = i * 3
-                            if base + 2 < len(dmx):
+                            base = i * 4 # Cada usuario ahora "consume" 4 canales
+                            
+                            # Comprobamos que tenemos los 4 canales para este usuario
+                            if base + 3 < len(dmx):
                                 r, g, b = dmx[base], dmx[base+1], dmx[base+2]
-                                if r > 0 or g > 0 or b > 0:
+                                torch_val = dmx[base+3] # El 4º canal (de 0 a 255)
+                                
+                                # Lógica: Si el 4º canal es > 127 (la mitad), encendemos
+                                torch_on = torch_val > 127
+                                
+                                if r > 0 or g > 0 or b > 0 or torch_on:
                                     await ws.send(json.dumps({
                                         "action": "dmx_live",
                                         "target_id": u_id,
                                         "color": f"#{r:02x}{g:02x}{b:02x}",
-                                        "torch": (r + g + b) > 380
+                                        "torch": torch_on
                                     }))
                 except BlockingIOError:
                     continue # Este puerto no tiene datos ahora, probamos el siguiente
