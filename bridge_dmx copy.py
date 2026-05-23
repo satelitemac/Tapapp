@@ -65,16 +65,16 @@ async def bridge():
                                 r, g, b = dmx[base], dmx[base+1], dmx[base+2]
                                 torch_val = dmx[base+3] # El 4º canal (de 0 a 255)
                                 
-                                # Lógica: Si el 4º canal es > 127 (la mitad), encendemos
-                                torch_on = torch_val > 127
+                                # Lógica: Si el 4º canal es > 127, encendemos
+                                torch_on = bool(torch_val > 127) 
                                 
-                                if r > 0 or g > 0 or b > 0 or torch_on:
-                                    await ws.send(json.dumps({
-                                        "action": "dmx_live",
-                                        "target_id": u_id,
-                                        "color": f"#{r:02x}{g:02x}{b:02x}",
-                                        "torch": torch_on
-                                    }))
+                                # Enviamos siempre, incluso si es negro (para apagar la linterna)
+                                await ws.send(json.dumps({
+                                    "action": "dmx_live",
+                                    "target_id": u_id,
+                                    "color": f"#{r:02x}{g:02x}{b:02x}",
+                                    "torch": torch_on
+                                }))
                 except BlockingIOError:
                     continue # Este puerto no tiene datos ahora, probamos el siguiente
 
