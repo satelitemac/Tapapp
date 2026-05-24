@@ -383,6 +383,26 @@ if d:
                         b_text = clean_bio(b_raw[0] if isinstance(b_raw, list) and b_raw else b_raw)
                         
                         if b_text and b_text != "---":
+                            # AQUÍ ESTABA EL CORTE. AHORA ESTÁ LA LÍNEA COMPLETA:
+                            col_bio, col_btn_bio = st.columns([3, 1])
+                            with col_bio:
+                                st.markdown(f'<span class="bio-label" style="line-height: 2.5; margin: 0;">👤 {a["name"].upper()} PROFILE</span>', unsafe_allow_html=True)
+                            with col_btn_bio:
+                                if st.button("➕ BIO", key=f"btn_bio_{i}", use_container_width=True):
+                                    st.session_state.panel_derecho_contenido = b_text
+                                    st.session_state.panel_derecho_titulo = f"PROFILE: {a['name'].upper()}"
+                                    st.rerun()
+                            
+                            st.markdown(f'<div class="bio-box" style="max-height: 12vh; overflow-y: auto; scrollbar-width: none;">{b_text}</div>', unsafe_allow_html=True)
+                            st.write("") # Espacio sutil
+                # =========================================================================
+
+                    # -- MÓDULO 3: ARTISTAS PROFILES --
+                    for i, a in enumerate(artistas):
+                        b_raw = a.get('bio', "")
+                        b_text = clean_bio(b_raw[0] if isinstance(b_raw, list) and b_raw else b_raw)
+                        
+                        if b_text and b_text != "---":
                             col_bio, col
 
 else:
