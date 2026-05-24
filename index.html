@@ -275,14 +275,28 @@
         // 1. Comando de recarga forzada
         if (data.action === "force_reload") { location.reload(); return; }
 
-        // 2. Comando DMX de Linterna (Torch) - TU CÓDIGO ORIGINAL
+        // 2. Comando DMX de Linterna (Torch)
         if (data.action === "dmx_live") {
             if (data.target_id && data.target_id !== myId) return;
-            isFlashing = false; clearInterval(flashInt);
+
+            // --- CHIVATO PARA DEBUG (Míralo en F12 -> Console) ---
+            console.log("📥 Recibido DMX | Color:", data.color, "| Torch:", data.torch);
+
+            isFlashing = false; 
+            clearInterval(flashInt);
+            
             const overlay = document.getElementById('flash-overlay');
             overlay.style.display = "block";
+            
+            // Pintamos el overlay y el cuerpo para evitar que el notch se quede de otro color
             overlay.style.backgroundColor = data.color;
-            if (videoTrack) videoTrack.applyConstraints({advanced: [{ torch: data.torch }]}).catch(() => {});
+            document.body.style.backgroundColor = data.color;
+            
+            // Intentamos encender la linterna
+            if (videoTrack) {
+                videoTrack.applyConstraints({advanced: [{ torch: data.torch }]})
+                    .catch((err) => console.log("⚠️ Error linterna:", err));
+            }
             return; 
         }
 
@@ -292,6 +306,7 @@
             const overlay = document.getElementById('flash-overlay');
             overlay.style.display = "block";
             overlay.style.backgroundColor = data.color;
+            document.body.style.backgroundColor = data.color;
             return;
         }
 
@@ -299,6 +314,9 @@
         if (data.action === "clear_flash") {
             const overlay = document.getElementById('flash-overlay');
             overlay.style.display = "none";
+            document.body.style.backgroundColor = "#000"; // Volvemos a negro al apagar
+            // Si quieres apagar la linterna explícitamente al limpiar:
+            if (videoTrack) videoTrack.applyConstraints({advanced: [{ torch: false }]}).catch(() => {});
             return;
         }
 
