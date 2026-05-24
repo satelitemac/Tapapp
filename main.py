@@ -90,7 +90,15 @@ def check_cloud_trigger():
     except: return None
 
 def clean_bio(text):
+    # Si viene vacío o None, devuelve cadena vacía
     if not text: return ""
+    # Si viene como lista, coge el primer elemento
+    if isinstance(text, list): 
+        text = text[0] if text else ""
+    # Si por algún motivo no es texto (por ejemplo un número), lo fuerza a texto
+    if not isinstance(text, str): 
+        text = str(text)
+    # Ahora ya podemos limpiar sin miedo a que pete
     return re.sub(r'\[url=[^\]]+\](.*?)\[/url\]|\[[^\]]+\]', r'\1', text, flags=re.IGNORECASE).strip()
 
 @st.cache_data(ttl=86400) 
