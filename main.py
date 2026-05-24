@@ -27,37 +27,22 @@ st.markdown("""<style>
     .credits-container { background: rgba(255,255,255,0.02); border: 1px solid #222; padding: 1.2vh; border-radius: 8px; max-height: 15vh; overflow-y: auto; scrollbar-width: none; margin-bottom: 0.5vh; }
     .credit-item { font-size: 1.05vh; color: #777; text-transform: uppercase; padding: 4px 0; border-bottom: 1px solid #1a1a1a; }
     iframe[title="streamlit_agraph.agraph"] { height: 75vh !important; }
-    div[data-testid="stButton"] button p, div[data-testid="stLinkButton"] a p { font-size: 1.1vh !important; font-weight: 800 !important; }
-    div[data-testid="stButton"] button, div[data-testid="stLinkButton"] a { padding-top: 0.4rem !important; padding-bottom: 0.4rem !important; }
     
-    /* Estilo para los botones de expansión */
-    .expand-btn {
-        background: rgba(255, 75, 75, 0.2);
-        color: #ff4b4b;
-        border: 1px solid #ff4b4b;
-        border-radius: 4px;
-        padding: 2px 8px;
-        font-size: 1vh;
-        font-weight: bold;
-        cursor: pointer;
-        float: right;
-        margin-top: -3px;
-    }
+    /* ESTILOS DE BOTONES REDUCIDOS Y ALINEADOS */
+    div[data-testid="stButton"] button p, div[data-testid="stLinkButton"] a p { font-size: 1.1vh !important; font-weight: 800 !important; margin: 0 !important; }
+    div[data-testid="stButton"] button, div[data-testid="stLinkButton"] a { padding: 0.2rem 0.5rem !important; min-height: unset !important; height: auto !important; border-radius: 4px !important; }
+    div[data-testid="stButton"] button:hover { border-color: #ff4b4b !important; color: #ff4b4b !important; }
+    
+    .inline-header-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; width: 100%; }
+    
+    /* Estilo para los botones de expansión originales (los mantengo por si los usas en otro lado) */
+    .expand-btn { background: rgba(255, 75, 75, 0.2); color: #ff4b4b; border: 1px solid #ff4b4b; border-radius: 4px; padding: 2px 8px; font-size: 1vh; font-weight: bold; cursor: pointer; float: right; margin-top: -3px; }
     .expand-btn:hover { background: #ff4b4b; color: white; }
 
     /* 🟢 FORZAR MODALES (POP-UPS) OSCUROS EN ANDROID/iOS MODO CLARO */
-    div[data-testid="stDialog"] > div, 
-    div[role="dialog"] {
-        background-color: #111111 !important;
-        border: 1px solid #333 !important;
-    }
-    div[data-testid="stDialog"] h2, 
-    div[role="dialog"] h2 {
-        color: #ffffff !important;
-    }
-    button[aria-label="Close"] {
-        color: #ffffff !important;
-    }
+    div[data-testid="stDialog"] > div, div[role="dialog"] { background-color: #111111 !important; border: 1px solid #333 !important; }
+    div[data-testid="stDialog"] h2, div[role="dialog"] h2 { color: #ffffff !important; }
+    button[aria-label="Close"] { color: #ffffff !important; }
 </style>""", unsafe_allow_html=True)
 
 URI, USER, PASS = "neo4j+s://3ba4e632.databases.neo4j.io", "3ba4e632", "MWwAJKrv6xxOC3cI17CR5-oKjCtKyN9IMnjwZa5KYKI"
@@ -306,21 +291,58 @@ if d:
                     
                     st.markdown(f'<div class="bio-box" style="border-left: 3px solid #00ffcc; background: rgba(0, 255, 204, 0.05); max-height: 60px; overflow:hidden;">{historia_txt}</div>', unsafe_allow_html=True)
 
+                # --- INICIO DEL NUEVO BLOQUE DE NOTAS Y PERFILES ---
+                
+                # 1. Memoria para el panel dinámico
+                if "panel_derecho_contenido" not in st.session_state:
+                    st.session_state.panel_derecho_contenido = None
+                if "panel_derecho_titulo" not in st.session_state:
+                    st.session_state.panel_derecho_titulo = ""
+
+                # 2. TRACK NOTES / WIKI
                 track_wiki = d['son'].get('wiki') or d['r'].get('notas') or d['r'].get('notes')
                 if track_wiki and track_wiki != "---" and not str(track_wiki).startswith("http"):
-                    st.markdown(f'''<div class="bio-box" style="border-left: 3px solid #ffd700; background: rgba(255, 215, 0, 0.05);"><span class="bio-label" style="color: #ffd700;">Track Notes / Wiki</span>{clean_bio(str(track_wiki))}</div>''', unsafe_allow_html=True)
-                    
+                    # Texto a la izquierda, botón diminuto a la derecha
+                    col_wiki_lbl, col_wiki_btn = st.columns([3, 1])
+                    with col_wiki_lbl:
+                        st.markdown('<span class="bio-label" style="color: #ffd700; line-height: 2.5; margin: 0;">📝 TRACK NOTES</span>', unsafe_allow_html=True)
+                    with col_wiki_btn:
+                        if st.button("👁️ VER", key="btn_view_wiki", use_container_width=True):
+                            st.session_state.panel_derecho_contenido = clean_bio(str(track_wiki))
+                            st.session_state.panel_derecho_titulo = "TRACK NOTES"
+
+                # 3. ARTISTAS PROFILES
                 for i, a in enumerate(artistas):
                     b_raw = a.get('bio', "")
                     b_text = clean_bio(b_raw[0] if isinstance(b_raw, list) and b_raw else b_raw)
                     if b_text and b_text != "---":
-                        col_bio, col_btn_bio = st.columns([4, 1])
+                        # Texto a la izquierda, botón diminuto a la derecha
+                        col_bio, col_btn_bio = st.columns([3, 1])
                         with col_bio:
-                            st.markdown(f'<span class="bio-label">{a["name"].upper()} Profile</span>', unsafe_allow_html=True)
+                            st.markdown(f'<span class="bio-label" style="line-height: 2.5; margin: 0;">👤 {a["name"].upper()} PROFILE</span>', unsafe_allow_html=True)
                         with col_btn_bio:
-                            if st.button("➕ VER", key=f"btn_bio_{i}", use_container_width=True):
-                                show_profile_modal(a["name"], b_text)
-                        
-                        st.markdown(f'<div class="bio-box" style="max-height: 60px; overflow:hidden;">{b_text}</div>', unsafe_allow_html=True)
+                            # Al pulsar, guardamos en memoria en vez de abrir un pop-up gigante
+                            if st.button("➕ BIO", key=f"btn_bio_{i}", use_container_width=True):
+                                st.session_state.panel_derecho_contenido = b_text
+                                st.session_state.panel_derecho_titulo = f"PROFILE: {a['name'].upper()}"
+
+                # 4. PANEL DINÁMICO (Sustituye al Pop-Up y al texto cortado)
+                if st.session_state.panel_derecho_contenido:
+                    st.markdown(f"""
+                        <div class="bio-box" style="border-left: 3px solid #ff4b4b; background: rgba(255, 75, 75, 0.08); padding: 1.5vh; border-radius: 8px; margin-top: 1vh;">
+                            <div style="margin-bottom: 1vh;">
+                                <strong style="color: #ff4b4b; font-size: 1.4vh; text-transform: uppercase;">{st.session_state.panel_derecho_titulo}</strong>
+                            </div>
+                            <p style="color: #eee; font-size: 1.3vh; line-height: 1.5; margin: 0; max-height: 35vh; overflow-y: auto; scrollbar-width: none;">
+                                {st.session_state.panel_derecho_contenido}
+                            </p>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+                    if st.button("❌ CERRAR PANEL", key="btn_close_panel", use_container_width=True):
+                        st.session_state.panel_derecho_contenido = None
+                        st.rerun()
+                # --- FIN DEL NUEVO BLOQUE ---
+
 else:
     st.markdown('<div style="color:#222; text-align:center; padding-top:45vh;">📡 STANDBY FOR DATA...</div>', unsafe_allow_html=True)
