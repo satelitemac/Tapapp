@@ -356,15 +356,13 @@ if d:
                                 st.session_state.panel_derecho_contenido = historia_txt
                                 st.session_state.panel_derecho_titulo = "TRACK HISTORY"
                                 st.rerun()
-                        
                         st.markdown(f'<div class="bio-box" style="border-left: 3px solid #00ffcc; background: rgba(0, 255, 204, 0.05); max-height: 12vh; overflow-y: auto; scrollbar-width: none;">{historia_txt}</div>', unsafe_allow_html=True)
-                        st.write("") # Espacio sutil
+                        st.write("") 
 
                     # -- MÓDULO 2: TRACK NOTES / WIKI --
                     track_wiki = d['son'].get('wiki') or d['r'].get('notas') or d['r'].get('notes')
                     if track_wiki and track_wiki != "---" and not str(track_wiki).startswith("http"):
                         cleaned_notes = clean_bio(str(track_wiki))
-                        
                         col_wiki_lbl, col_wiki_btn = st.columns([3, 1])
                         with col_wiki_lbl:
                             st.markdown('<span class="bio-label" style="color: #ffd700; line-height: 2.5; margin: 0;">📝 TRACK NOTES / WIKI</span>', unsafe_allow_html=True)
@@ -373,9 +371,8 @@ if d:
                                 st.session_state.panel_derecho_contenido = cleaned_notes
                                 st.session_state.panel_derecho_titulo = "TRACK NOTES"
                                 st.rerun()
-                        
                         st.markdown(f'<div class="bio-box" style="border-left: 3px solid #ffd700; background: rgba(255, 215, 0, 0.02); max-height: 12vh; overflow-y: auto; scrollbar-width: none;">{cleaned_notes}</div>', unsafe_allow_html=True)
-                        st.write("") # Espacio sutil
+                        st.write("") 
 
                     # -- MÓDULO 3: ARTISTAS PROFILES --
                     for i, a in enumerate(artistas):
@@ -383,7 +380,6 @@ if d:
                         b_text = clean_bio(b_raw[0] if isinstance(b_raw, list) and b_raw else b_raw)
                         
                         if b_text and b_text != "---":
-                            # AQUÍ ESTABA EL CORTE. AHORA ESTÁ LA LÍNEA COMPLETA:
                             col_bio, col_btn_bio = st.columns([3, 1])
                             with col_bio:
                                 st.markdown(f'<span class="bio-label" style="line-height: 2.5; margin: 0;">👤 {a["name"].upper()} PROFILE</span>', unsafe_allow_html=True)
@@ -392,18 +388,8 @@ if d:
                                     st.session_state.panel_derecho_contenido = b_text
                                     st.session_state.panel_derecho_titulo = f"PROFILE: {a['name'].upper()}"
                                     st.rerun()
-                            
                             st.markdown(f'<div class="bio-box" style="max-height: 12vh; overflow-y: auto; scrollbar-width: none;">{b_text}</div>', unsafe_allow_html=True)
-                            st.write("") # Espacio sutil
-                # =========================================================================
-
-                    # -- MÓDULO 3: ARTISTAS PROFILES --
-                    for i, a in enumerate(artistas):
-                        b_raw = a.get('bio', "")
-                        b_text = clean_bio(b_raw[0] if isinstance(b_raw, list) and b_raw else b_raw)
-                        
-                        if b_text and b_text != "---":
-                            col_bio, col
+                            st.write("")
 
 else:
     st.markdown('<div style="color:#222; text-align:center; padding-top:45vh;">📡 STANDBY FOR DATA...</div>', unsafe_allow_html=True)
