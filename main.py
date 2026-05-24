@@ -319,55 +319,71 @@ if d:
                 # --- INICIO DEL NUEVO BLOQUE DE NOTAS Y PERFILES ---
                 
                 # 1. Memoria para el panel dinámico
+                # =========================================================================
+                # --- CONTROL DE INTERFAZ DERECHA (MAQUETA NORMAL VS PANEL AMPLIADO) ---
+                # =========================================================================
+
+                # 1. Memoria para el panel (SIEMPRE NECESARIO)
                 if "panel_derecho_contenido" not in st.session_state:
                     st.session_state.panel_derecho_contenido = None
                 if "panel_derecho_titulo" not in st.session_state:
                     st.session_state.panel_derecho_titulo = ""
 
-                # 2. TRACK NOTES / WIKI
-                track_wiki = d['son'].get('wiki') or d['r'].get('notas') or d['r'].get('notes')
-                if track_wiki and track_wiki != "---" and not str(track_wiki).startswith("http"):
-                    # Texto a la izquierda, botón diminuto a la derecha
-                    col_wiki_lbl, col_wiki_btn = st.columns([3, 1])
-                    with col_wiki_lbl:
-                        st.markdown('<span class="bio-label" style="color: #ffd700; line-height: 2.5; margin: 0;">📝 TRACK NOTES</span>', unsafe_allow_html=True)
-                    with col_wiki_btn:
-                        if st.button("👁️ VER", key="btn_view_wiki", use_container_width=True):
-                            st.session_state.panel_derecho_contenido = clean_bio(str(track_wiki))
-                            st.session_state.panel_derecho_titulo = "TRACK NOTES"
-
-                # 3. ARTISTAS PROFILES
-                for i, a in enumerate(artistas):
-                    b_raw = a.get('bio', "")
-                    b_text = clean_bio(b_raw[0] if isinstance(b_raw, list) and b_raw else b_raw)
-                    if b_text and b_text != "---":
-                        # Texto a la izquierda, botón diminuto a la derecha
-                        col_bio, col_btn_bio = st.columns([3, 1])
-                        with col_bio:
-                            st.markdown(f'<span class="bio-label" style="line-height: 2.5; margin: 0;">👤 {a["name"].upper()} PROFILE</span>', unsafe_allow_html=True)
-                        with col_btn_bio:
-                            # Al pulsar, guardamos en memoria en vez de abrir un pop-up gigante
-                            if st.button("➕ BIO", key=f"btn_bio_{i}", use_container_width=True):
-                                st.session_state.panel_derecho_contenido = b_text
-                                st.session_state.panel_derecho_titulo = f"PROFILE: {a['name'].upper()}"
-
-                # 4. PANEL DINÁMICO (Sustituye al Pop-Up y al texto cortado)
+                # 🔴 MODO EXPANDIDO: SI HAY ALGO EN MEMORIA, TAPA TODO Y MUESTRA LA LETRA GRANDE
                 if st.session_state.panel_derecho_contenido:
                     st.markdown(f"""
-                        <div class="bio-box" style="border-left: 3px solid #ff4b4b; background: rgba(255, 75, 75, 0.08); padding: 1.5vh; border-radius: 8px; margin-top: 1vh;">
-                            <div style="margin-bottom: 1vh;">
-                                <strong style="color: #ff4b4b; font-size: 1.4vh; text-transform: uppercase;">{st.session_state.panel_derecho_titulo}</strong>
-                            </div>
-                            <p style="color: #eee; font-size: 1.3vh; line-height: 1.5; margin: 0; max-height: 35vh; overflow-y: auto; scrollbar-width: none;">
-                                {st.session_state.panel_derecho_contenido}
-                            </p>
+                        <div class="expanded-right-panel">
+                            <div class="expanded-right-title">🔍 {st.session_state.panel_derecho_titulo}</div>
+                            <p>{st.session_state.panel_derecho_contenido}</p>
                         </div>
                     """, unsafe_allow_html=True)
                     
-                    if st.button("❌ CERRAR PANEL", key="btn_close_panel", use_container_width=True):
+                    st.write("") # Separador
+                    if st.button("❌ CERRAR Y VOLVER", key="btn_close_panel", use_container_width=True):
                         st.session_state.panel_derecho_contenido = None
                         st.rerun()
-                # --- FIN DEL NUEVO BLOQUE ---
+
+                # 🟢 MODO MAQUETA NORMAL: SI NO HAY NADA SELECCIONADO, MUESTRA LOS BLOQUES PEQUEÑOS
+                else:
+                    # -- MÓDULO 1: TRACK HISTORY --
+                    historia_txt = clean_bio(d['son'].get('historia', ""))
+                    if historia_txt and historia_txt != "---":
+                        col_hist, col_btn_hist = st.columns([3, 1])
+                        with col_hist:
+                            st.markdown('<span class="bio-label" style="color: #00ffcc; line-height: 2.5; margin: 0;">⏳ TRACK HISTORY</span>', unsafe_allow_html=True)
+                        with col_btn_hist:
+                            if st.button("👁️ VER", key="btn_hist", use_container_width=True):
+                                st.session_state.panel_derecho_contenido = historia_txt
+                                st.session_state.panel_derecho_titulo = "TRACK HISTORY"
+                                st.rerun()
+                        
+                        st.markdown(f'<div class="bio-box" style="border-left: 3px solid #00ffcc; background: rgba(0, 255, 204, 0.05); max-height: 12vh; overflow-y: auto; scrollbar-width: none;">{historia_txt}</div>', unsafe_allow_html=True)
+                        st.write("") # Espacio sutil
+
+                    # -- MÓDULO 2: TRACK NOTES / WIKI --
+                    track_wiki = d['son'].get('wiki') or d['r'].get('notas') or d['r'].get('notes')
+                    if track_wiki and track_wiki != "---" and not str(track_wiki).startswith("http"):
+                        cleaned_notes = clean_bio(str(track_wiki))
+                        
+                        col_wiki_lbl, col_wiki_btn = st.columns([3, 1])
+                        with col_wiki_lbl:
+                            st.markdown('<span class="bio-label" style="color: #ffd700; line-height: 2.5; margin: 0;">📝 TRACK NOTES / WIKI</span>', unsafe_allow_html=True)
+                        with col_wiki_btn:
+                            if st.button("👁️ VER", key="btn_view_wiki", use_container_width=True):
+                                st.session_state.panel_derecho_contenido = cleaned_notes
+                                st.session_state.panel_derecho_titulo = "TRACK NOTES"
+                                st.rerun()
+                        
+                        st.markdown(f'<div class="bio-box" style="border-left: 3px solid #ffd700; background: rgba(255, 215, 0, 0.02); max-height: 12vh; overflow-y: auto; scrollbar-width: none;">{cleaned_notes}</div>', unsafe_allow_html=True)
+                        st.write("") # Espacio sutil
+
+                    # -- MÓDULO 3: ARTISTAS PROFILES --
+                    for i, a in enumerate(artistas):
+                        b_raw = a.get('bio', "")
+                        b_text = clean_bio(b_raw[0] if isinstance(b_raw, list) and b_raw else b_raw)
+                        
+                        if b_text and b_text != "---":
+                            col_bio, col
 
 else:
     st.markdown('<div style="color:#222; text-align:center; padding-top:45vh;">📡 STANDBY FOR DATA...</div>', unsafe_allow_html=True)
