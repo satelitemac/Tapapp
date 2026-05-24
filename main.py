@@ -43,6 +43,31 @@ st.markdown("""<style>
     div[data-testid="stDialog"] > div, div[role="dialog"] { background-color: #111111 !important; border: 1px solid #333 !important; }
     div[data-testid="stDialog"] h2, div[role="dialog"] h2 { color: #ffffff !important; }
     button[aria-label="Close"] { color: #ffffff !important; }
+            /* Estilo para el panel ampliado de lectura rápida (Modo DJ) */
+    .expanded-right-panel {
+        background: rgba(15, 15, 15, 0.98) !important;
+        border: 2px solid #ff4b4b !important;
+        padding: 2.5vh !important;
+        border-radius: 12px !important;
+        color: #ffffff !important;
+        /* Letra grande y de alto contraste para el directo */
+        font-size: 2.2vh !important; 
+        line-height: 1.6 !important;
+        height: 68vh !important;
+        overflow-y: auto !important;
+        scrollbar-width: none;
+        box-shadow: 0 0 25px rgba(255, 75, 75, 0.25);
+    }
+    .expanded-right-title {
+        font-size: 2.6vh !important;
+        color: #ff4b4b !important;
+        font-weight: 900 !important;
+        margin-bottom: 2vh !important;
+        text-transform: uppercase !important;
+        border-bottom: 1px solid #333;
+        padding-bottom: 1vh;
+    }
+            
 </style>""", unsafe_allow_html=True)
 
 URI, USER, PASS = "neo4j+s://3ba4e632.databases.neo4j.io", "3ba4e632", "MWwAJKrv6xxOC3cI17CR5-oKjCtKyN9IMnjwZa5KYKI"
