@@ -22,7 +22,7 @@ st.markdown("""<style>
     .value-text { font-size: 1.7vh; font-weight: 700; color: white; text-transform: uppercase; }
     .remix-highlight { color: #00ffcc; font-size: 2vh; font-weight: 800; }
     .side-panel { background: rgba(255,255,255,0.03); padding: 2vh; border-radius: 15px; border: 1px solid #ff4b4b; height: 75vh; overflow-y: auto; }
-    .bio-box { background: rgba(255,255,255,0.03); padding: 1.2vh; border-radius: 10px; color: #ccc; border: 1px solid #222; font-size: 1.25vh; margin-bottom: 1vh; }
+    .bio-box { background: rgba(255,255,255,0.03); padding: 1.2vh; border-radius: 10px; color: #ccc; border: 1px solid #222; font-size: 1.25vh; margin-bottom: 1vh; min-height: 15vh; }
     .bio-label { color: #888; text-transform: uppercase; font-size: 0.9vh; font-weight: 800; display: block; }
     .credits-container { background: rgba(255,255,255,0.02); border: 1px solid #222; padding: 1.2vh; border-radius: 8px; max-height: 15vh; overflow-y: auto; scrollbar-width: none; margin-bottom: 0.5vh; }
     .credit-item { font-size: 1.05vh; color: #777; text-transform: uppercase; padding: 4px 0; border-bottom: 1px solid #1a1a1a; }
