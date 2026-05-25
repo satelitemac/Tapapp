@@ -296,4 +296,4 @@ if d:
                         st.markdown(f'<div class="bio-box">{b}</div>', unsafe_allow_html=True)
 
 else:
-    st.markdown('<div style="
+    st.markdown('<div style="color:#222; text-align:center; padding-top:45vh;">📡 STANDBY FOR DATA...</div>', unsafe_allow_html=True)
