@@ -118,3 +118,9 @@ if d:
                 for i, a in enumerate(artistas):
                     b = clean_bio(a.get('bio', ""))
                     if b:
+                        c_b, c_bb = st.columns([4, 1])
+                        c_b.markdown(f'<span class="bio-label">👤 {a["name"].upper()}</span>', unsafe_allow_html=True)
+                        if c_bb.button("➕", key=f"b{i}"): st.session_state.panel_derecho_contenido = b; st.session_state.panel_derecho_titulo = a['name']; st.rerun()
+                        st.markdown(f'<div class="bio-box">{b}</div>', unsafe_allow_html=True)
+else:
+    st.markdown('<div style="text-align:center; padding-top:40vh;">📡 STANDBY...</div>', unsafe_allow_html=True)
