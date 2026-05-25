@@ -280,17 +280,21 @@ if d:
                         st.rerun()
                     st.markdown(f'<div class="bio-box" style="border-left: 3px solid #00ffcc;"><div class="text-preview">{historia_txt}</div></div>', unsafe_allow_html=True)
 
-                # 3. Credits (Al final)
+                # 3. Credits (CORREGIDO)
                 valid_credits = [c for c in d['creditos_nodos'] if c.get('name')]
                 if valid_credits:
                     col_cred, col_btn_cred = st.columns([4, 1])
                     col_cred.markdown('<span class="bio-label" style="color: #ffffff;">🛠️ PRODUCTION CREDITS</span>', unsafe_allow_html=True)
-                    if col_btn_cred.button("➕", key="btn_cred_magenta", use_container_width=True):
+                    if col_btn_cred.button("➕ VER", key="btn_cred_magenta", use_container_width=True):
                         html_credits = "".join([f"<div style='padding: 6px 0; border-bottom: 1px solid #222;'><b>{c['role']}:</b> {c['name']}</div>" for c in valid_credits])
                         st.session_state.panel_derecho_contenido = html_credits
                         st.session_state.panel_derecho_titulo = "PRODUCTION CREDITS"
                         st.rerun()
-                    st.markdown(f'<div class="bio-box"><div class="text-preview">{' | '.join([c['name'] for c in valid_credits[:3]])}...</div></div>', unsafe_allow_html=True)
+                    
+                    # Definimos el texto fuera del markdown para evitar el error de llaves
+                    cred_text = ' | '.join([c['name'] for c in valid_credits[:3]])
+                    if len(valid_credits) > 3: cred_text += '...'
+                    st.markdown(f'<div class="bio-box"><div class="text-preview">{cred_text}</div></div>', unsafe_allow_html=True)
 
 else:
     st.markdown('<div style="color:#222; text-align:center; padding-top:45vh;">📡 STANDBY FOR DATA...</div>', unsafe_allow_html=True)
