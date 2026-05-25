@@ -1,4 +1,4 @@
-# VERSION: 35.2 - THE COHERENT GRAPH (FULL RESTORE + POPUPS)
+# VERSION: 36.0 - THE COHERENT GRAPH (LINE CLAMP & MODALS)
 import streamlit as st
 from neo4j import GraphDatabase
 import time, re, urllib.parse, random, requests, textwrap
@@ -18,20 +18,23 @@ st.markdown("""<style>
     .label-tag { font-size: 0.9vh; font-weight: 800; color: #ff4b4b; text-transform: uppercase; margin-top: 0.8vh; display: block; }
     .value-text { font-size: 1.7vh; font-weight: 700; color: white; text-transform: uppercase; }
     .remix-highlight { color: #00ffcc; font-size: 2vh; font-weight: 800; }
-    .bio-box { background: rgba(255,255,255,0.03); padding: 1.5vh; border-radius: 10px; color: #ccc; border: 1px solid #222; font-size: 1.35vh; margin-bottom: 1vh; min-height: 10vh; max-height: 15vh; overflow-y: auto; }
-    .bio-label { color: #888; text-transform: uppercase; font-size: 0.9vh; font-weight: 800; display: block; margin-bottom: 0.5vh; }
-    .credits-container { background: rgba(255,255,255,0.02); border: 1px solid #222; padding: 1.2vh; border-radius: 8px; max-height: 15vh; overflow-y: auto; scrollbar-width: none; margin-bottom: 0.5vh; }
-    .credit-item { font-size: 1.05vh; color: #777; text-transform: uppercase; padding: 4px 0; border-bottom: 1px solid #1a1a1a; }
     
-    /* 🟢 FORZAR MODALES (POP-UPS) OSCUROS */
-    div[data-testid="stDialog"] > div, div[role="dialog"] { background-color: #0a0a0a !important; border: 2px solid #ff4b4b !important; border-radius: 15px !important; }
-    div[data-testid="stDialog"] h2, div[role="dialog"] h2 { color: #ff4b4b !important; font-weight: 900 !important; text-transform: uppercase !important; text-align: center; border-bottom: 1px solid #333; padding-bottom: 10px; }
-    button[aria-label="Close"] { color: #ffffff !important; }
+    /* CAJAS DINÁMICAS CON LINE CLAMPING (El secreto para que no se corte feo) */
+    .bio-box { background: rgba(255,255,255,0.03); padding: 1.5vh; border-radius: 10px; color: #ccc; border: 1px solid #222; font-size: 1.35vh; margin-bottom: 1.5vh; }
+    .bio-label { color: #888; text-transform: uppercase; font-size: 1vh; font-weight: 800; display: block; margin-bottom: 0.5vh; }
+    .text-preview { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.5; }
     
-    /* ESTILOS DE BOTONES */
+    .credit-item { font-size: 1.1vh; color: #777; text-transform: uppercase; padding: 4px 0; border-bottom: 1px solid #1a1a1a; }
+    
+    /* BOTONES */
     div[data-testid="stButton"] button p, div[data-testid="stLinkButton"] a p { font-size: 1.1vh !important; font-weight: 800 !important; margin: 0 !important; }
     div[data-testid="stButton"] button, div[data-testid="stLinkButton"] a { padding: 0.2rem 0.5rem !important; min-height: unset !important; height: auto !important; border-radius: 4px !important; }
     div[data-testid="stButton"] button:hover { border-color: #ff4b4b !important; color: #ff4b4b !important; }
+    
+    /* MODALES OSCUROS */
+    div[data-testid="stDialog"] > div, div[role="dialog"] { background-color: #0d0d0d !important; border: 1px solid #ff4b4b !important; border-radius: 12px; }
+    div[data-testid="stDialog"] h2, div[role="dialog"] h2 { color: #ff4b4b !important; text-align: center; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 1vh; }
+    button[aria-label="Close"] { color: #ffffff !important; }
 </style>""", unsafe_allow_html=True)
 
 URI, USER, PASS = "neo4j+s://3ba4e632.databases.neo4j.io", "3ba4e632", "MWwAJKrv6xxOC3cI17CR5-oKjCtKyN9IMnjwZa5KYKI"
@@ -53,7 +56,7 @@ def check_cloud_trigger():
             return res[0] if res else None
     except: return None
 
-# FUNCIÓN BLINDADA PARA EVITAR TYPE ERRORS
+# Función Blindada
 def clean_bio(text):
     if not text: return ""
     if isinstance(text, list): text = text[0] if text else ""
@@ -129,23 +132,25 @@ cloud_watcher()
 d = st.session_state.last_d
 p = st.session_state.last_p
 
-# --- 📝 FUNCIONES PARA MODALES (POP-UPS GIGANTES) ---
+# --- 📝 MODALES NATIVOS (Sustituyen a la lógica duplicada) ---
 @st.dialog("TRACK HISTORY", width="large")
 def show_history_modal(text):
-    st.markdown(f"<div style='font-size: 2.2vh; line-height: 1.8; color: #eee; padding: 2vh;'>{text}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='font-size: 2vh; line-height: 1.6; color: #eee; padding: 2vh;'>{text}</div>", unsafe_allow_html=True)
 
 @st.dialog("TRACK NOTES", width="large")
 def show_notes_modal(text):
-    st.markdown(f"<div style='font-size: 2.2vh; line-height: 1.8; color: #eee; padding: 2vh;'>{text}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='font-size: 2vh; line-height: 1.6; color: #eee; padding: 2vh;'>{text}</div>", unsafe_allow_html=True)
 
 @st.dialog("ARTIST PROFILE", width="large")
-def show_profile_modal(name, text):
-    st.markdown(f"<div style='font-size: 2.2vh; line-height: 1.8; color: #eee; padding: 2vh;'>{text}</div>", unsafe_allow_html=True)
+def show_profile_modal(text):
+    st.markdown(f"<div style='font-size: 2vh; line-height: 1.6; color: #eee; padding: 2vh;'>{text}</div>", unsafe_allow_html=True)
 
 @st.dialog("PRODUCTION CREDITS", width="large")
 def show_credits_modal(credits_list):
     html_credits = "".join([f"<div style='font-size: 1.8vh; color: #ddd; padding: 8px 0; border-bottom: 1px solid #333;'><b>{c['role']}:</b> <span style='color: #ff9900;'>{c['name']}</span></div>" for c in credits_list])
     st.markdown(f"<div style='padding: 2vh;'>{html_credits}</div>", unsafe_allow_html=True)
+
+# --------------------------------------------------------------------------------
 
 if d:
     artistas = d['nodos_artistas']
@@ -206,10 +211,12 @@ if d:
     else:
         st.markdown(f'<div class="art-title">{d["son"]["name"]}</div><div class="art-subtitle">{nombres_display}</div>', unsafe_allow_html=True)
         c1, c2, c3 = st.columns([1, 2.1, 1.4], gap="large")
+        
         with c1:
             st.markdown('<span style="color:#888; font-size: 1.4vh; font-weight:800; text-transform:uppercase; margin-bottom: 1vh; display:block;">History</span>', unsafe_allow_html=True)
             for track in (p or []): 
                 st.markdown(f'<div class="img-box"><img src="{track.get("foto") or VINILO_FALLBACK}" onerror="this.onerror=null; this.src=\'{VINILO_FALLBACK}\';"></div>', unsafe_allow_html=True)
+        
         with c2:
             bgs = primer_art.get('backgrounds', [])
             main_img = d['r'].get('foto') or (bgs[0] if bgs else VINILO_FALLBACK)
@@ -233,7 +240,7 @@ if d:
             with col_b5:
                 if st.button("LYRICS", use_container_width=True): st.session_state.mostrar_letras = not st.session_state.mostrar_letras
 
-            # INFO BÁSICA (Radar Box)
+            # INFO TÉCNICA (Radar Box)
             estilos = d['estilos_oficiales'] or []
             gen_str = " • ".join(estilos).upper() if estilos else "ELECTRONIC"
             st.markdown(f'''
@@ -247,34 +254,35 @@ if d:
                 </div>
             ''', unsafe_allow_html=True)
             
-            # --- CONTENEDOR MAESTRO DE LECTURA (Caja Fija) ---
-            with st.container(height=600, border=False):
+            # --- CONTENEDOR MAESTRO DE LECTURA ---
+            # Al no forzar height=650 aquí en el markdown interno, dejamos que fluya dinámicamente
+            with st.container(height=650, border=False):
                 
                 # 1. Producción
                 valid_credits = [c for c in d['creditos_nodos'] if c.get('name')]
                 if valid_credits:
                     col_cred, col_btn_cred = st.columns([4, 1])
-                    col_cred.markdown('<span class="label-tag" style="margin-bottom:0.5vh;">Production Credits</span>', unsafe_allow_html=True)
+                    col_cred.markdown('<span class="bio-label" style="color: #ffffff;">🛠️ PRODUCTION CREDITS</span>', unsafe_allow_html=True)
                     if col_btn_cred.button("➕ VER", key="btn_cred_modal", use_container_width=True):
                         show_credits_modal(valid_credits)
                     
-                    cred_preview = "".join([f'<div class="credit-item"><b>{c["role"]}:</b> {c["name"]}</div>' for c in valid_credits[:3]])
-                    if len(valid_credits) > 3: cred_preview += '<div class="credit-item" style="color:#ff4b4b;">... y más (Ver)</div>'
-                    st.markdown(f'<div class="credits-container">{cred_preview}</div>', unsafe_allow_html=True)
+                    cred_preview = "".join([f'<div class="credit-item"><b>{c["role"]}:</b> {c["name"]}</div>' for c in valid_credits[:4]])
+                    if len(valid_credits) > 4: cred_preview += '<div class="credit-item" style="color:#ff4b4b;">... Y MÁS (VER)</div>'
+                    st.markdown(f'<div class="bio-box">{cred_preview}</div>', unsafe_allow_html=True)
 
                 # 2. Letras
                 if st.session_state.mostrar_letras:
                     letras_txt = get_lyrics(primer_art['name'], d['son']['name'])
-                    st.markdown(f'''<div class="bio-box" style="border-left: 3px solid #ff00ff; background: rgba(255, 0, 255, 0.05);"><span class="bio-label" style="color: #ff00ff;">🎵 LYRICS</span><div style="font-size: 1.4vh; line-height: 1.4; color: #eee;">{letras_txt}</div></div>''', unsafe_allow_html=True)
+                    st.markdown(f'''<div class="bio-box" style="border-left: 3px solid #ff00ff; background: rgba(255, 0, 255, 0.05);"><span class="bio-label" style="color: #ff00ff;">🎵 LYRICS</span><div class="text-preview">{letras_txt}</div></div>''', unsafe_allow_html=True)
 
                 # 3. Historia
                 historia_txt = clean_bio(d['son'].get('historia', ""))
                 if historia_txt and historia_txt != "---":
                     col_hist, col_btn_hist = st.columns([4, 1])
-                    col_hist.markdown('<span class="bio-label" style="color: #00ffcc;">Track History</span>', unsafe_allow_html=True)
+                    col_hist.markdown('<span class="bio-label" style="color: #00ffcc;">⏳ TRACK HISTORY</span>', unsafe_allow_html=True)
                     if col_btn_hist.button("➕ VER", key="btn_hist_modal", use_container_width=True):
                         show_history_modal(historia_txt)
-                    st.markdown(f'<div class="bio-box" style="border-left: 3px solid #00ffcc; background: rgba(0, 255, 204, 0.05);">{historia_txt}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="bio-box" style="border-left: 3px solid #00ffcc; background: rgba(0, 255, 204, 0.05);"><div class="text-preview">{historia_txt}</div></div>', unsafe_allow_html=True)
 
                 # 4. Notas
                 notas_txt = clean_bio(str(d['son'].get('wiki') or d['r'].get('notas') or ""))
@@ -283,7 +291,7 @@ if d:
                     col_notes.markdown('<span class="bio-label" style="color: #ffd700;">📝 TRACK NOTES</span>', unsafe_allow_html=True)
                     if col_btn_notes.button("➕ VER", key="btn_notes_modal", use_container_width=True):
                         show_notes_modal(notas_txt)
-                    st.markdown(f'<div class="bio-box" style="border-left: 3px solid #ffd700; background: rgba(255, 215, 0, 0.05);">{notas_txt}</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="bio-box" style="border-left: 3px solid #ffd700; background: rgba(255, 215, 0, 0.05);"><div class="text-preview">{notas_txt}</div></div>', unsafe_allow_html=True)
 
                 # 5. Bios Artistas
                 for i, a in enumerate(artistas):
@@ -292,8 +300,8 @@ if d:
                         col_bio, col_btn_bio = st.columns([4, 1])
                         col_bio.markdown(f'<span class="bio-label">👤 {a["name"].upper()}</span>', unsafe_allow_html=True)
                         if col_btn_bio.button("➕ VER", key=f"btn_bio_modal_{i}", use_container_width=True):
-                            show_profile_modal(a['name'].upper(), b)
-                        st.markdown(f'<div class="bio-box">{b}</div>', unsafe_allow_html=True)
+                            show_profile_modal(b)
+                        st.markdown(f'<div class="bio-box"><div class="text-preview">{b}</div></div>', unsafe_allow_html=True)
 
 else:
     st.markdown('<div style="color:#222; text-align:center; padding-top:45vh;">📡 STANDBY FOR DATA...</div>', unsafe_allow_html=True)
