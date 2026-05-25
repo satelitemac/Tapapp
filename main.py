@@ -240,10 +240,8 @@ if d:
                 </div>
             ''', unsafe_allow_html=True)
             
-            # --- CONTENEDOR MAESTRO DE LECTURA (AJUSTE A PORTADA) ---
-        # Usamos height=530 (ajusta este número si tu portada es más o menos alta)
-        with st.container(height=530, border=False):
-            
+            # --- BLOQUE DERECHO (ESTABILIZADO Y AJUSTADO) ---
+        with st.container(height=520, border=False):
             if st.session_state.panel_derecho_contenido:
                 # MODO EXPANDIDO
                 st.markdown(f"""<div class="expanded-right-panel" style="height: 480px !important;">
@@ -253,47 +251,45 @@ if d:
                 if st.button("❌ VOLVER", use_container_width=True):
                     st.session_state.panel_derecho_contenido = None
                     st.rerun()
-            
             else:
-                # MODO ORDENADO: 1. Bio, 2. History, 3. Credits
-                
-                # 1. Bio (Primero)
+                # 1. BIOGRAFÍA BANDA
                 for i, a in enumerate(artistas):
                     b = clean_bio(a.get('bio', ""))
                     if b and b != "---":
-                        col_bio, col_btn_bio = st.columns([4, 1])
-                        col_bio.markdown(f'<span class="bio-label">👤 {a["name"].upper()}</span>', unsafe_allow_html=True)
-                        if col_btn_bio.button("➕", key=f"btn_bio_{i}", use_container_width=True):
+                        col_b, col_btn_b = st.columns([4, 1])
+                        col_b.markdown(f'<span class="bio-label">👤 {a["name"].upper()}</span>', unsafe_allow_html=True)
+                        if col_btn_b.button("➕", key=f"b_bio_{i}", use_container_width=True):
                             st.session_state.panel_derecho_contenido = b
-                            st.session_state.panel_derecho_titulo = f"BIO: {a['name'].upper()}"
+                            st.session_state.panel_derecho_titulo = a['name'].upper()
                             st.rerun()
                         st.markdown(f'<div class="bio-box"><div class="text-preview">{b}</div></div>', unsafe_allow_html=True)
-                
-                # 2. History
-                historia_txt = clean_bio(d['son'].get('historia', ""))
-                if historia_txt and historia_txt != "---":
-                    col_hist, col_btn_hist = st.columns([4, 1])
-                    col_hist.markdown('<span class="bio-label" style="color: #00ffcc;">⏳ TRACK HISTORY</span>', unsafe_allow_html=True)
-                    if col_btn_hist.button("➕", key="btn_hist_magenta", use_container_width=True):
-                        st.session_state.panel_derecho_contenido = historia_txt
+
+                # 2. TRACK HISTORY
+                h = clean_bio(d['son'].get('historia', ""))
+                if h and h != "---":
+                    col_h, col_bh = st.columns([4, 1])
+                    col_h.markdown('<span class="bio-label" style="color: #00ffcc;">⏳ HISTORY</span>', unsafe_allow_html=True)
+                    if col_bh.button("➕", key="b_hist", use_container_width=True):
+                        st.session_state.panel_derecho_contenido = h
                         st.session_state.panel_derecho_titulo = "TRACK HISTORY"
                         st.rerun()
-                    st.markdown(f'<div class="bio-box" style="border-left: 3px solid #00ffcc;"><div class="text-preview">{historia_txt}</div></div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="bio-box" style="border-left: 3px solid #00ffcc;"><div class="text-preview">{h}</div></div>', unsafe_allow_html=True)
 
-                # 3. Credits (CORREGIDO)
+                # 3. CREDITS
                 valid_credits = [c for c in d['creditos_nodos'] if c.get('name')]
                 if valid_credits:
-                    col_cred, col_btn_cred = st.columns([4, 1])
-                    col_cred.markdown('<span class="bio-label" style="color: #ffffff;">🛠️ PRODUCTION CREDITS</span>', unsafe_allow_html=True)
-                    if col_btn_cred.button("➕ VER", key="btn_cred_magenta", use_container_width=True):
-                        html_credits = "".join([f"<div style='padding: 6px 0; border-bottom: 1px solid #222;'><b>{c['role']}:</b> {c['name']}</div>" for c in valid_credits])
-                        st.session_state.panel_derecho_contenido = html_credits
+                    col_c, col_bc = st.columns([4, 1])
+                    col_c.markdown('<span class="bio-label" style="color: #ffffff;">🛠️ CREDITS</span>', unsafe_allow_html=True)
+                    if col_bc.button("➕", key="b_cred", use_container_width=True):
+                        html_creds = "".join([f"<p style='margin:5px 0;'><b>{c['role']}:</b> {c['name']}</p>" for c in valid_credits])
+                        st.session_state.panel_derecho_contenido = html_creds
                         st.session_state.panel_derecho_titulo = "PRODUCTION CREDITS"
                         st.rerun()
                     
-                    # Definimos el texto fuera del markdown para evitar el error de llaves
-                    cred_text = ' | '.join([c['name'] for c in valid_credits[:3]])
-                    if len(valid_credits) > 3: cred_text += '...'
+                    # Generación segura de preview
+                    names_preview = [c['name'] for c in valid_credits[:2]]
+                    cred_text = " • ".join(names_preview)
+                    if len(valid_credits) > 2: cred_text += " ..."
                     st.markdown(f'<div class="bio-box"><div class="text-preview">{cred_text}</div></div>', unsafe_allow_html=True)
 
 else:
