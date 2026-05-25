@@ -45,6 +45,8 @@ if "mostrar_letras" not in st.session_state: st.session_state.mostrar_letras = F
 if "last_d" not in st.session_state: st.session_state.last_d = None
 if "last_p" not in st.session_state: st.session_state.last_p = None
 if "last_cloud_ts" not in st.session_state: st.session_state.last_cloud_ts = None
+if "panel_derecho_contenido" not in st.session_state: st.session_state.panel_derecho_contenido = None
+if "panel_derecho_titulo" not in st.session_state: st.session_state.panel_derecho_titulo = ""
 
 @st.cache_resource
 def get_driver(): return GraphDatabase.driver(URI, auth=(USER, PASS))
