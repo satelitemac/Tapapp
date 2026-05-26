@@ -218,15 +218,20 @@ if d:
             ws_query = f"{primer_art['name']} {d['son']['name']}"
             ws_url = f"https://www.whosampled.com/search/?q={urllib.parse.quote(ws_query)}"
 
+            # --- BOTONERA SUPERIOR ---
             col_b1, col_b2, col_b3, col_b4, col_b5 = st.columns(5)
             with col_b1: st.button("GRAPH", on_click=lambda: setattr(st.session_state, "mapa_abierto", True), use_container_width=True)
             with col_b2: st.link_button("DISCOGS", d['r'].get('discogs', "#"), use_container_width=True)
             with col_b3: st.link_button("WIKI", wiki_url, use_container_width=True) 
             with col_b4: st.link_button("SAMPLES", ws_url, use_container_width=True) 
             with col_b5:
-                if st.button("LYRICS", use_container_width=True): st.session_state.mostrar_letras = not st.session_state.mostrar_letras
+                # El botón LYRICS ahora expande la letra en la zona magenta (sin tocar portadas)
+                if st.button("LYRICS", use_container_width=True):
+                    st.session_state.panel_derecho_contenido = get_lyrics(primer_art['name'], d['son']['name'])
+                    st.session_state.panel_derecho_titulo = "LYRICS"
+                    st.rerun()
 
-            # INFO TÉCNICA (Radar Box)
+            # --- INFO TÉCNICA (Radar Box) ---
             estilos = d['estilos_oficiales'] or []
             gen_str = " • ".join(estilos).upper() if estilos else "ELECTRONIC"
             st.markdown(f'''
@@ -240,28 +245,28 @@ if d:
                 </div>
             ''', unsafe_allow_html=True)
             
-            # --- ZONA DE INFORMACIÓN (SIN CONTENEDOR FORZADO) ---
-            
-            # 🔴 MODO EXPANDIDO: Ocupa el lugar pero respeta el flujo
+            # --- ZONA DE INFORMACIÓN (LA ZONA MAGENTA) ---
             if st.session_state.panel_derecho_contenido:
+                # MODO EXPANDIDO: Solo ocupa la columna derecha, portadas intactas a la izq.
                 st.markdown(f"""
                     <div class="radar-box" style="border: 2px solid #ff4b4b;">
                         <div style="font-size: 2.2vh; color: #ff4b4b; font-weight: 900; margin-bottom: 1vh;">🔍 {st.session_state.panel_derecho_titulo}</div>
-                        <div style="font-size: 2vh; color: #eee; max-height: 400px; overflow-y: auto;">{st.session_state.panel_derecho_contenido}</div>
+                        <div style="font-size: 2vh; color: #eee; max-height: 420px; overflow-y: auto; line-height: 1.6;">{st.session_state.panel_derecho_contenido}</div>
                     </div>
                 """, unsafe_allow_html=True)
                 if st.button("❌ VOLVER", use_container_width=True):
                     st.session_state.panel_derecho_contenido = None
                     st.rerun()
             
-            # 🟢 MODO LISTA: Bloques normales con la misma clase .radar-box
             else:
+                # MODO LISTA MAQUETA: Bio -> History -> Credits -> Lyrics
+                
                 # 1. BIOGRAFÍA
                 for i, a in enumerate(artistas):
                     b = clean_bio(a.get('bio', ""))
                     if b and b != "---":
                         col_b, col_btn_b = st.columns([4, 1])
-                        col_b.markdown(f'<span class="bio-label"> {a["name"].upper()}</span>', unsafe_allow_html=True)
+                        col_b.markdown(f'<span class="bio-label">👤 {a["name"].upper()}</span>', unsafe_allow_html=True)
                         if col_btn_b.button("➕", key=f"b_bio_{i}"):
                             st.session_state.panel_derecho_contenido = b
                             st.session_state.panel_derecho_titulo = a['name'].upper()
@@ -272,7 +277,7 @@ if d:
                 h = clean_bio(d['son'].get('historia', ""))
                 if h and h != "---":
                     col_h, col_bh = st.columns([4, 1])
-                    col_h.markdown('<span class="bio-label"> HISTORY</span>', unsafe_allow_html=True)
+                    col_h.markdown('<span class="bio-label">⏳ HISTORY</span>', unsafe_allow_html=True)
                     if col_bh.button("➕", key="b_hist"):
                         st.session_state.panel_derecho_contenido = h
                         st.session_state.panel_derecho_titulo = "TRACK HISTORY"
@@ -283,7 +288,7 @@ if d:
                 valid_credits = [c for c in d['creditos_nodos'] if c.get('name')]
                 if valid_credits:
                     col_c, col_bc = st.columns([4, 1])
-                    col_c.markdown('<span class="bio-label"> CREDITS</span>', unsafe_allow_html=True)
+                    col_c.markdown('<span class="bio-label">🛠️ CREDITS</span>', unsafe_allow_html=True)
                     if col_bc.button("➕", key="b_cred"):
                         html_creds = "".join([f"<p style='margin:2px 0;'><b>{c['role']}:</b> {c['name']}</p>" for c in valid_credits])
                         st.session_state.panel_derecho_contenido = html_creds
@@ -292,6 +297,24 @@ if d:
                     cred_text = " • ".join([c['name'] for c in valid_credits[:3]])
                     if len(valid_credits) > 3: cred_text += " ..."
                     st.markdown(f'<div class="radar-box"><div style="font-size: 1.2vh;">{cred_text}</div></div>', unsafe_allow_html=True)
+
+                # 4. LYRICS (Aparece abajo del todo como el resto de info)
+                letras_txt = get_lyrics(primer_art['name'], d['son']['name'])
+                if letras_txt:
+                    col_l, col_bl = st.columns([4, 1])
+                    col_l.markdown('<span class="bio-label" style="color: #ff00ff;">🎵 LYRICS</span>', unsafe_allow_html=True)
+                    if col_bl.button("➕", key="b_lyrics"):
+                        st.session_state.panel_derecho_contenido = letras_txt
+                        st.session_state.panel_derecho_titulo = "LYRICS"
+                        st.rerun()
+                    
+                    # Limpiamos los <br> solo para que la vista previa se vea en un bloque compacto
+                    preview_letras = letras_txt.replace('<br>', ' ').replace('<br><br>', ' ')
+                    if "Letra no disponible" in preview_letras:
+                        preview_letras = "BUSCAR EN GENIUS..."
+                    else:
+                        preview_letras = preview_letras[:100] + "..."
+                    st.markdown(f'<div class="radar-box" style="border-left: 5px solid #ff00ff;"><div class="text-preview">{preview_letras}</div></div>', unsafe_allow_html=True)
 
 else:
     st.markdown('<div style="color:#222; text-align:center; padding-top:45vh;">📡 STANDBY FOR DATA...</div>', unsafe_allow_html=True)
