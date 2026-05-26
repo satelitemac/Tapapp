@@ -225,13 +225,13 @@ if d:
             with col_b3: st.link_button("WIKI", wiki_url, use_container_width=True) 
             with col_b4: st.link_button("SAMPLES", ws_url, use_container_width=True) 
             with col_b5:
-                # El botón LYRICS ahora expande la letra en la zona magenta (sin tocar portadas)
+                # El botón superior ahora activa el modo expandido inyectando la letra abajo
                 if st.button("LYRICS", use_container_width=True):
                     st.session_state.panel_derecho_contenido = get_lyrics(primer_art['name'], d['son']['name'])
                     st.session_state.panel_derecho_titulo = "LYRICS"
                     st.rerun()
 
-            # --- INFO TÉCNICA (Radar Box) ---
+            # --- INFO TÉCNICA (Radar Box - Siempre Fijo Arriba) ---
             estilos = d['estilos_oficiales'] or []
             gen_str = " • ".join(estilos).upper() if estilos else "ELECTRONIC"
             st.markdown(f'''
@@ -245,12 +245,15 @@ if d:
                 </div>
             ''', unsafe_allow_html=True)
             
-            # --- ZONA DE INFORMACIÓN (LA ZONA MAGENTA) ---
+            # --- ZONA INTERACTIVA DINÁMICA ---
             if st.session_state.panel_derecho_contenido:
-                # MODO EXPANDIDO: Solo ocupa la columna derecha, portadas intactas a la izq.
+                # MODO EXPANDIDO: Se activa al pulsar Bios, History, Credits o el botón superior LYRICS
+                # Detalle pro: si el contenido son las letras, pintamos el filete izquierdo en magenta (#ff00ff)
+                border_color = "#ff00ff" if st.session_state.panel_derecho_titulo == "LYRICS" else "#ff4b4b"
+                
                 st.markdown(f"""
-                    <div class="radar-box" style="border: 2px solid #ff4b4b;">
-                        <div style="font-size: 2.2vh; color: #ff4b4b; font-weight: 900; margin-bottom: 1vh;">🔍 {st.session_state.panel_derecho_titulo}</div>
+                    <div class="radar-box" style="border-left: 5px solid {border_color};">
+                        <div style="font-size: 2.2vh; color: {border_color}; font-weight: 900; margin-bottom: 1vh;">🔍 {st.session_state.panel_derecho_titulo}</div>
                         <div style="font-size: 2vh; color: #eee; max-height: 420px; overflow-y: auto; line-height: 1.6;">{st.session_state.panel_derecho_contenido}</div>
                     </div>
                 """, unsafe_allow_html=True)
@@ -259,7 +262,7 @@ if d:
                     st.rerun()
             
             else:
-                # MODO LISTA MAQUETA: Bio -> History -> Credits -> Lyrics
+                # MODO LISTA MAQUETA: Las letras están fuera de aquí, no estorban visualmente
                 
                 # 1. BIOGRAFÍA
                 for i, a in enumerate(artistas):
@@ -297,24 +300,6 @@ if d:
                     cred_text = " • ".join([c['name'] for c in valid_credits[:3]])
                     if len(valid_credits) > 3: cred_text += " ..."
                     st.markdown(f'<div class="radar-box"><div style="font-size: 1.2vh;">{cred_text}</div></div>', unsafe_allow_html=True)
-
-                # 4. LYRICS (Aparece abajo del todo como el resto de info)
-                letras_txt = get_lyrics(primer_art['name'], d['son']['name'])
-                if letras_txt:
-                    col_l, col_bl = st.columns([4, 1])
-                    col_l.markdown('<span class="bio-label" style="color: #ff00ff;">🎵 LYRICS</span>', unsafe_allow_html=True)
-                    if col_bl.button("➕", key="b_lyrics"):
-                        st.session_state.panel_derecho_contenido = letras_txt
-                        st.session_state.panel_derecho_titulo = "LYRICS"
-                        st.rerun()
-                    
-                    # Limpiamos los <br> solo para que la vista previa se vea en un bloque compacto
-                    preview_letras = letras_txt.replace('<br>', ' ').replace('<br><br>', ' ')
-                    if "Letra no disponible" in preview_letras:
-                        preview_letras = "BUSCAR EN GENIUS..."
-                    else:
-                        preview_letras = preview_letras[:100] + "..."
-                    st.markdown(f'<div class="radar-box" style="border-left: 5px solid #ff00ff;"><div class="text-preview">{preview_letras}</div></div>', unsafe_allow_html=True)
 
 else:
     st.markdown('<div style="color:#222; text-align:center; padding-top:45vh;">📡 STANDBY FOR DATA...</div>', unsafe_allow_html=True)
