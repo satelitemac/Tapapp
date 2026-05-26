@@ -240,19 +240,23 @@ if d:
                 </div>
             ''', unsafe_allow_html=True)
             
-            # --- CONTENEDOR MAESTRO (ZONA MAGENTA LIMPIA) ---
-        with st.container(height=520, border=False):
+            # --- ZONA DE INFORMACIÓN (SIN CONTENEDOR FORZADO) ---
+            
+            # 🔴 MODO EXPANDIDO: Ocupa el lugar pero respeta el flujo
             if st.session_state.panel_derecho_contenido:
-                # MODO EXPANDIDO
-                st.markdown(f"""<div class="expanded-right-panel">
-                                <div class="expanded-right-title">🔍 {st.session_state.panel_derecho_titulo}</div>
-                                <div style="font-size: 2vh; color: #eee; overflow-y: auto;">{st.session_state.panel_derecho_contenido}</div>
-                            </div>""", unsafe_allow_html=True)
+                st.markdown(f"""
+                    <div class="radar-box" style="border: 2px solid #ff4b4b;">
+                        <div style="font-size: 2.2vh; color: #ff4b4b; font-weight: 900; margin-bottom: 1vh;">🔍 {st.session_state.panel_derecho_titulo}</div>
+                        <div style="font-size: 2vh; color: #eee; max-height: 400px; overflow-y: auto;">{st.session_state.panel_derecho_contenido}</div>
+                    </div>
+                """, unsafe_allow_html=True)
                 if st.button("❌ VOLVER", use_container_width=True):
                     st.session_state.panel_derecho_contenido = None
                     st.rerun()
+            
+            # 🟢 MODO LISTA: Bloques normales con la misma clase .radar-box
             else:
-                # 1. BIOGRAFÍA (Con la clase data-module)
+                # 1. BIOGRAFÍA
                 for i, a in enumerate(artistas):
                     b = clean_bio(a.get('bio', ""))
                     if b and b != "---":
@@ -262,34 +266,32 @@ if d:
                             st.session_state.panel_derecho_contenido = b
                             st.session_state.panel_derecho_titulo = a['name'].upper()
                             st.rerun()
-                        st.markdown(f'<div class="data-module"><div class="text-preview">{b}</div></div>', unsafe_allow_html=True)
+                        st.markdown(f'<div class="radar-box"><div class="text-preview">{b}</div></div>', unsafe_allow_html=True)
 
-                # 2. TRACK HISTORY (Franja verde ELIMINADA)
+                # 2. TRACK HISTORY
                 h = clean_bio(d['son'].get('historia', ""))
                 if h and h != "---":
                     col_h, col_bh = st.columns([4, 1])
-                    col_h.markdown('<span class="bio-label">⏳ TRACK HISTORY</span>', unsafe_allow_html=True)
+                    col_h.markdown('<span class="bio-label">⏳ HISTORY</span>', unsafe_allow_html=True)
                     if col_bh.button("➕", key="b_hist"):
                         st.session_state.panel_derecho_contenido = h
                         st.session_state.panel_derecho_titulo = "TRACK HISTORY"
                         st.rerun()
-                    st.markdown(f'<div class="data-module"><div class="text-preview">{h}</div></div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="radar-box"><div class="text-preview">{h}</div></div>', unsafe_allow_html=True)
 
-                # 3. CREDITS (Más visible)
+                # 3. CREDITS
                 valid_credits = [c for c in d['creditos_nodos'] if c.get('name')]
                 if valid_credits:
                     col_c, col_bc = st.columns([4, 1])
-                    col_c.markdown('<span class="bio-label">🛠️ PRODUCTION CREDITS</span>', unsafe_allow_html=True)
+                    col_c.markdown('<span class="bio-label">🛠️ CREDITS</span>', unsafe_allow_html=True)
                     if col_bc.button("➕", key="b_cred"):
-                        html_creds = "".join([f"<p style='margin:5px 0;'><b>{c['role']}:</b> {c['name']}</p>" for c in valid_credits])
+                        html_creds = "".join([f"<p style='margin:2px 0;'><b>{c['role']}:</b> {c['name']}</p>" for c in valid_credits])
                         st.session_state.panel_derecho_contenido = html_creds
                         st.session_state.panel_derecho_titulo = "PRODUCTION CREDITS"
                         st.rerun()
-                    
-                    # He quitado la clase 'text-preview' aquí para que no corte los nombres tan pronto
-                    cred_text = " • ".join([c['name'] for c in valid_credits[:5]]) 
-                    if len(valid_credits) > 5: cred_text += " ..."
-                    st.markdown(f'<div class="data-module" style="font-size: 1.2vh;">{cred_text}</div>', unsafe_allow_html=True)
+                    cred_text = " • ".join([c['name'] for c in valid_credits[:3]])
+                    if len(valid_credits) > 3: cred_text += " ..."
+                    st.markdown(f'<div class="radar-box"><div style="font-size: 1.2vh;">{cred_text}</div></div>', unsafe_allow_html=True)
 
 else:
     st.markdown('<div style="color:#222; text-align:center; padding-top:45vh;">📡 STANDBY FOR DATA...</div>', unsafe_allow_html=True)
