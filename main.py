@@ -158,7 +158,7 @@ if d:
                 nodes.append(Node(id=n_id, label=label, color=color, shape="circle", font={"size":f_size, "color":f_color, "bold":is_song}))
                 added_nodes.add(n_id)
         song_display = d['son']['name'].replace(" (", "\n(")
-        add_node("SONG", song_display, "#00ffcc", is_song=True)
+        add_node("SONG", song_display, "#3a6e64", is_song=True)
         for a in artistas:
             add_node(a['name'], f"{a['name']}\n(INTERPRETA)", "#ff4b4b")
             edges.append(Edge(source=a['name'], target="SONG", color="#ff4b4b"))
@@ -261,7 +261,7 @@ if d:
                     b = clean_bio(a.get('bio', ""))
                     if b and b != "---":
                         col_b, col_btn_b = st.columns([4, 1])
-                        col_b.markdown(f'<span class="bio-label">👤 {a["name"].upper()}</span>', unsafe_allow_html=True)
+                        col_b.markdown(f'<span class="bio-label"> {a["name"].upper()}</span>', unsafe_allow_html=True)
                         if col_btn_b.button("➕", key=f"b_bio_{i}"):
                             st.session_state.panel_derecho_contenido = b
                             st.session_state.panel_derecho_titulo = a['name'].upper()
@@ -272,7 +272,7 @@ if d:
                 h = clean_bio(d['son'].get('historia', ""))
                 if h and h != "---":
                     col_h, col_bh = st.columns([4, 1])
-                    col_h.markdown('<span class="bio-label">⏳ HISTORY</span>', unsafe_allow_html=True)
+                    col_h.markdown('<span class="bio-label"> HISTORY</span>', unsafe_allow_html=True)
                     if col_bh.button("➕", key="b_hist"):
                         st.session_state.panel_derecho_contenido = h
                         st.session_state.panel_derecho_titulo = "TRACK HISTORY"
@@ -283,7 +283,7 @@ if d:
                 valid_credits = [c for c in d['creditos_nodos'] if c.get('name')]
                 if valid_credits:
                     col_c, col_bc = st.columns([4, 1])
-                    col_c.markdown('<span class="bio-label">🛠️ CREDITS</span>', unsafe_allow_html=True)
+                    col_c.markdown('<span class="bio-label"> CREDITS</span>', unsafe_allow_html=True)
                     if col_bc.button("➕", key="b_cred"):
                         html_creds = "".join([f"<p style='margin:2px 0;'><b>{c['role']}:</b> {c['name']}</p>" for c in valid_credits])
                         st.session_state.panel_derecho_contenido = html_creds
