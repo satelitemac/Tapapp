@@ -188,7 +188,7 @@
                     <div class="tt-logo">¡HOLA!</div>
                     <div class="controls-login">
                         <input type="text" id="n" class="input-field" placeholder="Nombre">
-                        <input type="text" id="m" class="input-field" placeholder="Mesa">
+                        <input type="text" id="m" class="input-field" placeholder="Ubicacion">
                     </div>
                 </div>
             </div>
@@ -376,9 +376,9 @@
 
     async function init() {
         const name = document.getElementById('n').value;
-        const mesa = document.getElementById('m').value;
-        if(!name || !mesa) return;
-        myId = `${name} (Mesa ${mesa})`;
+        const ubicacion = document.getElementById('m').value;
+        if(!name || !ubicacion) return;
+        myId = `${name} (Ubicacion ${ubicacion})`;
         localStorage.setItem("tt_user_id", myId);
         showScreen('sc-wait');
         setupHardware();
