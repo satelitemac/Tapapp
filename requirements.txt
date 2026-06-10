@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+websockets
+streamlit
+pandas
+neo4j
+streamlit-agraph
